@@ -34,8 +34,13 @@ window.onload = () => {
 
 // --- LÓGICA DEL REPRODUCTOR ELEGANTE ---
 let canciones = [
-    { titulo: "Phonk Drift", url: "musica/pista1.mp3" },
-    { titulo: "Night Ride", url: "musica/pista2.mp3" }
+    { titulo: "In Da Club", url: "In Da Club.mp3" },
+    { titulo: "Ooh Ahh (My Life Be Like)", url: "Ooh Ahh (My Life Be Like) (feat. Tobymac).mp3" },
+    { titulo: "Pump It Up", url: "Pump It Up.mp3" },
+    { titulo: "See You Again (feat. Charlie Puth)", url: "See You Again (feat. Charlie Puth).mp3" },
+    { titulo: "Six Days (Remix)", url: "Six Days (Remix).mp3" },
+    { titulo: "Tokyo Drift (Fast & Furious)", url: "Tokyo Drift (Fast & Furious) (From The Fast And The Furious_ Tokyo Drift Soundtrack).mp3" },
+    { titulo: "You Know How We Do It", url: "You Know How We Do It.mp3" }
 ];
 let indice = 0;
 let reproductor = new Audio(canciones[indice].url);
@@ -74,4 +79,5 @@ function iniciarDibujo() {
 
 function borrar() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
 }
