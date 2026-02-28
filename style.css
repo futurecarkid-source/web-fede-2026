@@ -73,3 +73,35 @@ body {
     object-fit: cover;
 }
 
+.drawing-toolbar {
+    display: flex;
+    gap: 15px;
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 12px 12px 0 0;
+    align-items: center;
+    justify-content: center;
+}
+
+#paintCanvas {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    cursor: crosshair;
+    touch-action: none; /* Importante para dibujo en móviles */
+}
+
+.btn-3d {
+    margin-top: 20px;
+    padding: 15px 30px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-3d:hover { transform: scale(1.05); }
