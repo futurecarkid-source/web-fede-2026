@@ -1,6 +1,6 @@
 {
-  "name": "AutoWorld Elite",
-  "short_name": "AutoWorld",
+  "name": "Federico",
+  "short_name": "Fede",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -12,4 +12,5 @@
       "type": "image/png"
     }
   ]
+
 }
