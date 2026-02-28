@@ -48,7 +48,7 @@ let reproductor = new Audio(canciones[indice].url);
 function playMusic() {
     if (reproductor.paused) {
         reproductor.play();
-        document.getElementById('song-title').innerText = "Reproduciendo: " + canciones[indice].titulo;
+        document.getElementById('song-title').innerText = "" + canciones[indice].titulo;
     } else {
         reproductor.pause();
     }
@@ -81,3 +81,4 @@ function borrar() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 }
+
