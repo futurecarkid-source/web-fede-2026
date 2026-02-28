@@ -27,6 +27,26 @@ body {
     z-index: 100;
 }
 
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    width: 100%;
+}
+
+#progress-bar {
+    flex-grow: 1; /* Hace que la barra ocupe todo el espacio central */
+    cursor: pointer;
+    accent-color: var(--accent-color); /* Usa el color rojo que ya definiste */
+}
+
+.progress-container span {
+    font-size: 12px;
+    font-family: monospace;
+    min-width: 35px;
+}
+
 /* Tarjetas de Noticias */
 #news-container {
     display: grid;
@@ -52,3 +72,4 @@ body {
     height: 150px;
     object-fit: cover;
 }
+
