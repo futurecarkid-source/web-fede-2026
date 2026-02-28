@@ -10,12 +10,15 @@
 <body>
     <div class="music-card" id="player">
         <p id="song-title">Cargando música...</p>
-            <button onclick="volume(10)">+</button>
-            <button onclick="volume(-10)">-</button>
         <div class="btns">
             <button onclick="changeSong(-1)">⏮</button>
             <button onclick="playMusic()">▶</button>
             <button onclick="changeSong(1)">⏭</button>
+            <div class="controls">
+                <button onclick="changeVolume(0.1)">+</button>
+                <button onclick="changeVolume(-0.1)">-</button>
+                <input type="range" id="volume" min="0" max="1" step="0.1" onchange="adjustVolume(this.value)">
+            </div>
         </div>
     </div>
 
@@ -41,6 +44,7 @@
 </body>
 
 </html>
+
 
 
 
