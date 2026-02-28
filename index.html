@@ -18,6 +18,11 @@
                 <button onclick="changeVolume(0.1)">+</button>
                 <button onclick="changeVolume(-0.1)">-</button>
                 <input type="range" id="volume" min="0" max="1" step="0.1" onchange="adjustVolume(this.value)">
+                <div class="progress-container">
+                        <span id="current-time">0:00</span>
+                        <input type="range" id="progress-bar" min="0" max="100" value="0" onchange="seekSong()">
+                        <span id="duration-time">0:00</span>
+                </div>
             </div>
         </div>
     </div>
@@ -44,6 +49,7 @@
 </body>
 
 </html>
+
 
 
 
