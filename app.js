@@ -7,7 +7,49 @@ async function cargarNoticias() {
         // Buscamos noticias sobre "Formula 1" y "Nuevos Autos"
         const respuesta = await fetch(`https://newsdata.io/api/1/news?apikey=${MI_API_KEY}&q=automovilismo&language=es`);
         const datos = await respuesta.json();
-        
+        const newsData = [
+    { id: 1, titulo: "Lanzamiento del nuevo Ferrari 2026", desc: "La ingeniería italiana sorprende con un motor híbrido revolucionario.", img: "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=500" },
+    { id: 2, titulo: "Calendario F1: Próximas Carreras", desc: "Revisa las fechas clave para el Gran Premio de esta temporada.", img: "https://images.unsplash.com/photo-1541890289-b86df5bafd81?w=500" },
+    { id: 1, titulo: "Lanzamiento del nuevo Ferrari 2026", desc: "Repetida", img: "" }, // Esta será ignorada
+    // Agrega más noticias aquí...
+];
+
+function renderNews() {
+    const container = document.getElementById('news-container');
+    container.innerHTML = ""; // Limpia el "Cargando..."
+    
+    const uniqueNews = [];
+    const titlesSeen = new Set();
+
+    // Filtramos para que no haya títulos repetidos
+    newsData.forEach(news => {
+        if (!titlesSeen.has(news.titulo)) {
+            titlesSeen.add(news.titulo);
+            uniqueNews.push(news);
+        }
+    });
+
+    // Creamos las tarjetas modernas
+    uniqueNews.forEach(news => {
+        const card = document.createElement('div');
+        card.className = 'news-card';
+        card.innerHTML = `
+            <img src="${news.img}" alt="Noticia">
+            <div class="news-content">
+                <h3>${news.titulo}</h3>
+                <p>${news.desc}</p>
+                <button class="btn-read">Leer más</button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// Ejecutar al cargar la página
+window.onload = () => {
+    renderNews();
+    // Aquí puedes llamar también a tus otras funciones iniciales
+};
         contenedor.innerHTML = ""; // Limpiamos el texto de "Cargando..."
 
         datos.results.forEach(noticia => {
@@ -156,33 +198,43 @@ function setTool(tool) {
 let scene, camera, renderer, carMesh;
 
 function convertTo3D() {
-    // Si ya existe un renderizado, lo limpiamos
+    // Limpiar el contenedor antes de renderizar
     document.getElementById('container3d').innerHTML = "";
     
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, 500 / 300, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(500, 300);
     document.getElementById('container3d').appendChild(renderer.domElement);
 
-    // Creamos la textura a partir de lo que dibujaste
-    const drawingTexture = new THREE.CanvasTexture(canvas);
-    
-    // Creamos un "Coche" (Caja estilizada por ahora) y le ponemos tu dibujo
-    const geometry = new THREE.BoxGeometry(3, 1, 5);
-    const material = new THREE.MeshPhongMaterial({ map: drawingTexture });
-    carMesh = new THREE.Mesh(geometry, material);
-    
-    scene.add(carMesh);
-    
-    // Luz para que se vea el color
+    // Luces para que el coche brille
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
     const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 5, 5).normalize();
+    light.position.set(5, 10, 7.5);
     scene.add(light);
-    scene.add(new THREE.AmbientLight(0x404040));
 
-    camera.position.z = 7;
-    animate3D();
+    // Tu dibujo del canvas como textura
+    const drawingTexture = new THREE.CanvasTexture(canvas);
+
+    // Cargar el modelo real
+    const loader = new THREE.GLTFLoader();
+    loader.load('https://threejs.org/examples/models/gltf/Ferrari.glb', function(gltf) {
+        carMesh = gltf.scene;
+        
+        // Aplicar tu diseño a la pintura del coche
+        carMesh.traverse((node) => {
+            if (node.isMesh) {
+                node.material.map = drawingTexture;
+                node.material.needsUpdate = true;
+            }
+        });
+
+        carMesh.scale.set(1.5, 1.5, 1.5);
+        scene.add(carMesh);
+        animate3D();
+    });
+
+    camera.position.set(0, 2, 5);
 }
 
 function animate3D() {
@@ -194,5 +246,6 @@ function borrar() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 }
+
 
 
