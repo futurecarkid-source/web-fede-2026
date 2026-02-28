@@ -31,14 +31,25 @@
         <h1>FEDE<span>RICO</span></h1>
     </header>
 
-    <section id="customizer">
-        <h2>Diseñar</h2>
-        <canvas id="canvasDibujo"></canvas>
-        <div class="controls">
-            <button onclick="borrar()">Limpiar</button>
-            <button class="btn-primary" onclick="procesar3D()">Ver en 3D</button>
+<section id="editor">
+    <h2>Diseñador de Carrocería</h2>
+    <div class="canvas-container">
+        <div class="drawing-toolbar">
+            <input type="color" id="colorPicker" value="#e74c3c">
+            <input type="range" id="brushSize" min="1" max="20" value="5">
+            <button onclick="setTool('brush')">🖌️</button>
+            <button onclick="setTool('eraser')">🧽</button>
+            <button onclick="clearCanvas()">🗑️ Limpiar</button>
         </div>
-    </section>
+        
+        <canvas id="paintCanvas" width="600" height="400"></canvas>
+        
+        <div class="actions">
+            <button class="btn-3d" onclick="convertTo3D()">🚀 Generar Modelo 3D</button>
+        </div>
+    </div>
+    <div id="container3d"></div> 
+</section>
 
     <section id="news-section">
         <h2>Últimas Noticias</h2>
@@ -49,6 +60,7 @@
 </body>
 
 </html>
+
 
 
 
