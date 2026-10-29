@@ -2,9 +2,47 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#05060a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="F. Hacker" />
   <title>Fantasy Hacker</title>
+
+  <!-- PWA: manifest e icono generados en línea (sin archivos extra) -->
+  <script>
+    (function () {
+      try {
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#05060a"/><rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#b026ff" stroke-width="18"/><path d="M290 70 120 300h120l-30 142 182-246H270z" fill="#39ff88"/></svg>';
+        var icon = 'data:image/svg+xml,' + encodeURIComponent(svg);
+        var base = location.href.split('#')[0].split('?')[0];
+        var manifest = {
+          name: 'Fantasy Hacker', short_name: 'F. Hacker', description: 'Hackea tu liga fantasy con IA',
+          start_url: base, scope: base.replace(/[^/]*$/, ''), display: 'standalone',
+          background_color: '#05060a', theme_color: '#05060a',
+          icons: [{ src: icon, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }]
+        };
+        var link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
+        document.head.appendChild(link);
+        var fav = document.createElement('link'); fav.rel = 'icon'; fav.href = icon; document.head.appendChild(fav);
+        // Icono PNG para iOS (Safari no acepta SVG en apple-touch-icon)
+        var c = document.createElement('canvas'); c.width = c.height = 180;
+        var x = c.getContext('2d');
+        x.fillStyle = '#05060a'; x.fillRect(0, 0, 180, 180);
+        x.strokeStyle = '#b026ff'; x.lineWidth = 7; x.strokeRect(10, 10, 160, 160);
+        x.fillStyle = '#39ff88'; x.beginPath();
+        [[102,25],[42,105],[84,105],[74,155],[138,69],[95,69]].forEach(function (p, i) { i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); });
+        x.closePath(); x.fill();
+        var ati = document.createElement('link'); ati.rel = 'apple-touch-icon'; ati.href = c.toDataURL('image/png'); document.head.appendChild(ati);
+      } catch (e) { /* PWA opcional */ }
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault(); window.__fhInstall = e; window.dispatchEvent(new Event('fh-install-ready'));
+      });
+    })();
+  </script>
 
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,15 +56,7 @@
       theme: {
         extend: {
           colors: {
-            void: '#05060a',
-            panel: '#0b0d16',
-            panel2: '#11142080',
-            neon: '#39ff88',
-            neondim: '#1f9e57',
-            hack: '#b026ff',
-            hackdim: '#6d1aa3',
-            danger: '#ff3b6b',
-            warn: '#ffc53d',
+            void: '#05060a', panel: '#0b0d16', neon: '#39ff88', hack: '#b026ff', danger: '#ff3b6b', warn: '#ffc53d',
           },
           fontFamily: {
             display: ['Orbitron', 'sans-serif'],
@@ -44,11 +74,7 @@
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
 
   <style>
-    :root {
-      --neon: #39ff88;
-      --hack: #b026ff;
-      --void: #05060a;
-    }
+    :root { --neon: #39ff88; --hack: #b026ff; --void: #05060a; }
     html, body { background: var(--void); color: #e6e8f0; }
     body {
       font-family: 'Inter', system-ui, sans-serif;
@@ -63,8 +89,6 @@
       overflow-x: hidden;
     }
     ::selection { background: var(--hack); color: #fff; }
-
-    /* Scrollbars */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-thumb { background: #2a2f45; border-radius: 9px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -81,30 +105,22 @@
       backdrop-filter: blur(6px);
     }
     .card-purple {
-      background:
-        linear-gradient(180deg, rgba(40, 10, 66, .55), rgba(12, 6, 22, .9));
+      background: linear-gradient(180deg, rgba(40, 10, 66, .55), rgba(12, 6, 22, .9));
       border: 1px solid rgba(176,38,255,.45);
       box-shadow: 0 0 30px rgba(176,38,255,.18), inset 0 0 40px rgba(176,38,255,.06);
       border-radius: 18px;
     }
 
-    /* Logo glitch */
     .glitch { position: relative; }
-    .glitch::before, .glitch::after {
-      content: attr(data-text);
-      position: absolute; inset: 0;
-      overflow: hidden; pointer-events: none;
-    }
-    .glitch::before { color: var(--hack); transform: translate(2px, 0); clip-path: inset(0 0 55% 0); animation: glitchA 3.2s infinite steps(1); opacity: .8; }
-    .glitch::after { color: var(--neon); transform: translate(-2px, 0); clip-path: inset(55% 0 0 0); animation: glitchB 2.7s infinite steps(1); opacity: .8; }
+    .glitch::before, .glitch::after { content: attr(data-text); position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .glitch::before { color: var(--hack); clip-path: inset(0 0 55% 0); animation: glitchA 3.2s infinite steps(1); opacity: .8; }
+    .glitch::after { color: var(--neon); clip-path: inset(55% 0 0 0); animation: glitchB 2.7s infinite steps(1); opacity: .8; }
     @keyframes glitchA { 0%, 92%, 100% { transform: translate(0,0); } 93% { transform: translate(3px,-1px); } 96% { transform: translate(-2px,1px); } }
     @keyframes glitchB { 0%, 88%, 100% { transform: translate(0,0); } 89% { transform: translate(-3px,1px); } 94% { transform: translate(2px,0); } }
 
-    /* Pitch */
     .pitch {
       position: relative;
-      background:
-        repeating-linear-gradient(180deg, #0b3a22 0 10%, #0d4428 10% 20%);
+      background: repeating-linear-gradient(180deg, #0b3a22 0 10%, #0d4428 10% 20%);
       border-radius: 18px;
       border: 1px solid rgba(57,255,136,.35);
       box-shadow: inset 0 0 60px rgba(0,0,0,.65), 0 0 30px rgba(57,255,136,.08);
@@ -112,70 +128,49 @@
     }
     .pitch-svg line, .pitch-svg rect, .pitch-svg circle, .pitch-svg path { stroke: rgba(210,255,230,.35); stroke-width: .35; fill: none; }
     .pitch-svg .spot { fill: rgba(210,255,230,.45); stroke: none; }
-
     .player-chip { transition: transform .2s ease, filter .2s ease; }
-    .player-chip:hover { transform: translateY(-3px) scale(1.04); filter: drop-shadow(0 0 10px rgba(57,255,136,.6)); }
-    .player-chip.selected .shirt { box-shadow: 0 0 0 2px var(--hack), 0 0 22px var(--hack); }
-
+    .player-chip:hover { transform: translate(-50%, -50%) scale(1.06) !important; filter: drop-shadow(0 0 10px rgba(57,255,136,.6)); }
     .shirt {
-      width: 46px; height: 46px; border-radius: 14px;
+      width: 42px; height: 42px;
       display: grid; place-items: center;
-      font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 12px;
-      color: #05060a;
+      font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 11px; color: #05060a;
       clip-path: polygon(22% 0, 38% 8%, 62% 8%, 78% 0, 100% 18%, 88% 38%, 82% 32%, 82% 100%, 18% 100%, 18% 32%, 12% 38%, 0 18%);
     }
-    @media (min-width: 640px) { .shirt { width: 54px; height: 54px; font-size: 13px; } }
+    @media (min-width: 640px) { .shirt { width: 52px; height: 52px; font-size: 13px; } }
+    .empty-slot { width: 42px; height: 42px; border: 2px dashed rgba(57,255,136,.7); border-radius: 12px; display: grid; place-items: center; color: var(--neon); font-size: 22px; font-weight: 800; animation: pulseDot 1.6s infinite; }
+    @media (min-width: 640px) { .empty-slot { width: 52px; height: 52px; } }
 
-    /* Scanner */
     .scan-wrap { position: relative; overflow: hidden; }
-    .scan-line {
-      position: absolute; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, transparent, var(--neon), transparent);
-      box-shadow: 0 0 18px var(--neon), 0 0 40px var(--neon);
-      animation: scan 1.6s ease-in-out infinite;
-    }
-    .scan-grid {
-      position: absolute; inset: 0;
-      background:
-        linear-gradient(rgba(57,255,136,.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(57,255,136,.12) 1px, transparent 1px);
-      background-size: 18px 18px;
-      mix-blend-mode: screen;
-    }
+    .scan-line { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--neon), transparent); box-shadow: 0 0 18px var(--neon), 0 0 40px var(--neon); animation: scan 1.6s ease-in-out infinite; }
+    .scan-grid { position: absolute; inset: 0; background: linear-gradient(rgba(57,255,136,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(57,255,136,.12) 1px, transparent 1px); background-size: 18px 18px; mix-blend-mode: screen; }
     @keyframes scan { 0% { top: 0%; } 50% { top: calc(100% - 3px); } 100% { top: 0%; } }
 
     .blink { animation: blink 1s steps(1) infinite; }
     @keyframes blink { 50% { opacity: 0; } }
-
     .fade-in { animation: fadeIn .45s ease both; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
     .pulse-dot { animation: pulseDot 1.6s ease-in-out infinite; }
     @keyframes pulseDot { 0%, 100% { box-shadow: 0 0 0 0 rgba(57,255,136,.7); } 50% { box-shadow: 0 0 0 7px rgba(57,255,136,0); } }
-
     .bump { animation: bump .6s ease; }
-    @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.15); color: #fff; } 100% { transform: scale(1); } }
+    @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
+    .flash-up { animation: flashUp 1.2s ease; }
+    @keyframes flashUp { 0% { background: rgba(57,255,136,.25); } 100% { background: transparent; } }
+    .flash-down { animation: flashDown 1.2s ease; }
+    @keyframes flashDown { 0% { background: rgba(255,59,107,.25); } 100% { background: transparent; } }
 
     input[type=range] { accent-color: var(--hack); }
     .dropzone-active { border-color: var(--neon) !important; background: rgba(57,255,136,.06); }
-
-    .btn-neon {
-      background: linear-gradient(90deg, #39ff88, #1fd6a0);
-      color: #03140a; font-weight: 800;
-      box-shadow: 0 0 18px rgba(57,255,136,.45);
-      transition: transform .15s ease, box-shadow .15s ease;
-    }
+    .btn-neon { background: linear-gradient(90deg, #39ff88, #1fd6a0); color: #03140a; font-weight: 800; box-shadow: 0 0 18px rgba(57,255,136,.45); transition: transform .15s ease, box-shadow .15s ease; }
     .btn-neon:hover { transform: translateY(-1px); box-shadow: 0 0 28px rgba(57,255,136,.7); }
-    .btn-hack {
-      background: linear-gradient(90deg, #b026ff, #7b2bff);
-      color: #fff; font-weight: 800;
-      box-shadow: 0 0 18px rgba(176,38,255,.5);
-      transition: transform .15s ease, box-shadow .15s ease;
-    }
+    .btn-hack { background: linear-gradient(90deg, #b026ff, #7b2bff); color: #fff; font-weight: 800; box-shadow: 0 0 18px rgba(176,38,255,.5); transition: transform .15s ease, box-shadow .15s ease; }
     .btn-hack:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(176,38,255,.8); }
+    .btn-ghost { border: 1px solid rgba(255,255,255,.12); color: #cbd5e1; transition: all .15s ease; }
+    .btn-ghost:hover { border-color: rgba(57,255,136,.5); color: var(--neon); }
     button:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
-
     .sheet-backdrop { background: rgba(2,3,8,.72); backdrop-filter: blur(4px); }
+    .field { background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: .55rem .75rem; font-size: .875rem; color: #fff; width: 100%; }
+    .field:focus { outline: none; border-color: var(--hack); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
 <body>
@@ -187,156 +182,218 @@
     const { useState, useMemo, useEffect, useRef, useCallback } = React;
 
     /* =====================================================
-       DATOS: EQUIPOS Y PRÓXIMA JORNADA
-       diff: 1 (rival muy débil) → 5 (rival durísimo)
+       UTILIDADES
+    ===================================================== */
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const r1 = (n) => Math.round(n * 10) / 10;
+    const r2 = (n) => Math.round(n * 100) / 100;
+    const mean = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
+    const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    const fmtM = (m) => `${m.toFixed(1)}M€`;
+    const fmtEUR = (m) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 }).format(Math.round(m * 1e6)) + ' €';
+    const uid = (p = 'id') => p + Math.random().toString(36).slice(2, 9);
+    function seeded(str) {
+      let h = 2166136261;
+      for (const c of String(str)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+      return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 10000) / 10000; };
+    }
+    const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+
+    /* =====================================================
+       EQUIPOS (str = fortaleza 1-5) Y CALENDARIO
     ===================================================== */
     const TEAMS = {
-      RMA: { name: 'Real Madrid', color: '#f5f5f5', next: { rival: 'Getafe', diff: 2, home: true } },
-      BAR: { name: 'FC Barcelona', color: '#3b5bff', next: { rival: 'Elche', diff: 2, home: false } },
-      ATM: { name: 'Atlético', color: '#ff3b4e', next: { rival: 'Real Betis', diff: 3, home: true } },
-      ATH: { name: 'Athletic', color: '#ff5a3c', next: { rival: 'Villarreal', diff: 4, home: false } },
-      RSO: { name: 'Real Sociedad', color: '#3fa8ff', next: { rival: 'Real Oviedo', diff: 1, home: true } },
-      VIL: { name: 'Villarreal', color: '#ffe24a', next: { rival: 'Athletic', diff: 3, home: true } },
-      BET: { name: 'Real Betis', color: '#2bd46f', next: { rival: 'Atlético', diff: 4, home: false } },
-      OSA: { name: 'Osasuna', color: '#d1314a', next: { rival: 'Girona', diff: 2, home: true } },
-      CEL: { name: 'Celta', color: '#8fd3ff', next: { rival: 'Mallorca', diff: 2, home: true } },
-      ESP: { name: 'Espanyol', color: '#4f8dff', next: { rival: 'Alavés', diff: 2, home: true } },
-      SEV: { name: 'Sevilla', color: '#ffffff', next: { rival: 'Levante', diff: 2, home: true } },
-      GIR: { name: 'Girona', color: '#ff4d6d', next: { rival: 'Osasuna', diff: 3, home: false } },
-      VAL: { name: 'Valencia', color: '#ff9f1c', next: { rival: 'Rayo', diff: 3, home: false } },
+      RMA: { name: 'Real Madrid', color: '#f5f5f5', str: 5 },
+      BAR: { name: 'FC Barcelona', color: '#3b5bff', str: 5 },
+      ATM: { name: 'Atlético', color: '#ff3b4e', str: 4 },
+      ATH: { name: 'Athletic', color: '#ff5a3c', str: 4 },
+      VIL: { name: 'Villarreal', color: '#ffe24a', str: 4 },
+      BET: { name: 'Real Betis', color: '#2bd46f', str: 3 },
+      RSO: { name: 'Real Sociedad', color: '#3fa8ff', str: 3 },
+      CEL: { name: 'Celta', color: '#8fd3ff', str: 3 },
+      OSA: { name: 'Osasuna', color: '#d1314a', str: 3 },
+      ESP: { name: 'Espanyol', color: '#4f8dff', str: 2 },
+      SEV: { name: 'Sevilla', color: '#ffffff', str: 2 },
+      GIR: { name: 'Girona', color: '#ff4d6d', str: 2 },
+      VAL: { name: 'Valencia', color: '#ff9f1c', str: 2 },
+      RAY: { name: 'Rayo Vallecano', color: '#ff6b6b', str: 3 },
+      GET: { name: 'Getafe', color: '#2563eb', str: 2 },
+      MLL: { name: 'Mallorca', color: '#e11d48', str: 2 },
+      ALA: { name: 'Alavés', color: '#60a5fa', str: 2 },
+      ELC: { name: 'Elche', color: '#22c55e', str: 1 },
+      LEV: { name: 'Levante', color: '#7c3aed', str: 1 },
+      OVI: { name: 'Real Oviedo', color: '#1d4ed8', str: 1 },
     };
+    const TEAM_CODES = Object.keys(TEAMS);
+    const teamOf = (code) => TEAMS[code] || { name: code || 'Desconocido', color: '#8b93a7', str: 3 };
+
+    // Calendario round-robin (método del círculo): cambia cada jornada
+    const ROUND = { current: 11 };
+    let FIX_CACHE = { round: null, map: null };
+    function fixturesFor(round) {
+      const n = TEAM_CODES.length;
+      const rest = TEAM_CODES.slice(1);
+      const k = round % (n - 1);
+      const arr = [TEAM_CODES[0], ...rest.slice(k), ...rest.slice(0, k)];
+      const map = {};
+      for (let i = 0; i < n / 2; i++) {
+        const a = arr[i], b = arr[n - 1 - i];
+        const aHome = (round + i) % 2 === 0;
+        map[a] = { rival: b, home: aHome };
+        map[b] = { rival: a, home: !aHome };
+      }
+      return map;
+    }
+    function nextOf(p) {
+      if (FIX_CACHE.round !== ROUND.current) FIX_CACHE = { round: ROUND.current, map: fixturesFor(ROUND.current) };
+      const f = FIX_CACHE.map[p.team];
+      if (!f) return { rival: 'Por confirmar', code: null, diff: 3, home: true };
+      const t = TEAMS[f.rival];
+      return { rival: t.name, code: f.rival, diff: clamp(t.str + (f.home ? 0 : 1), 1, 5), home: f.home };
+    }
 
     /* =====================================================
        JUGADORES
-       price en millones · form = últimas 5 jornadas
-       last = último partido · trend = % previsto de precio esta semana
     ===================================================== */
-    const mk = (p) => ({ ...p });
+    const P = (id, name, short, team, pos, price, avg, form, health, trend, g, a, min, sub, rating, extra = {}) => ({
+      id, name, short, team, pos, price, avg, form, health, trend,
+      points: Math.round(avg * 10), last: { goals: g, assists: a, minutes: min, subbedAt: sub, rating }, ...extra,
+    });
+    const S = { starter: true };
+    const B = { starter: false };
 
     const INITIAL_SQUAD = [
-      // Titulares 4-3-3
-      mk({ id: 's1', name: 'Álex Remiro', short: 'Remiro', team: 'RSO', pos: 'POR', price: 9.8, points: 48, avg: 4.8, form: [6, 4, 2, 5, 3], health: 'ok', trend: 2, starter: true,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.4 } }),
-      mk({ id: 's2', name: 'Jules Koundé', short: 'Koundé', team: 'BAR', pos: 'DEF', price: 14.5, points: 61, avg: 6.1, form: [8, 7, 4, 9, 6], health: 'ok', trend: 4, starter: true,
-        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 7.6 } }),
-      mk({ id: 's3', name: 'Robin Le Normand', short: 'Le Normand', team: 'ATM', pos: 'DEF', price: 7.9, points: 27, avg: 3.0, form: [2, 1, 3, 0, 1], health: 'ok', trend: -6, starter: true,
-        last: { goals: 0, assists: 0, minutes: 45, subbedAt: 45, rating: 5.1 } }),
-      mk({ id: 's4', name: 'Raúl Asencio', short: 'Asencio', team: 'RMA', pos: 'DEF', price: 9.1, points: 39, avg: 4.3, form: [5, 6, 2, 4, 5], health: 'ok', trend: 1, starter: true,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.8 } }),
-      mk({ id: 's5', name: 'Aitor Paredes', short: 'Paredes', team: 'ATH', pos: 'DEF', price: 6.4, points: 22, avg: 2.8, form: [3, 2, 1, 2, 0], health: 'duda', trend: -4, starter: true,
-        last: { goals: 0, assists: 0, minutes: 62, subbedAt: 62, rating: 5.5 } }),
-      mk({ id: 's6', name: 'Federico Valverde', short: 'Valverde', team: 'RMA', pos: 'MED', price: 17.2, points: 72, avg: 7.2, form: [9, 6, 8, 10, 7], health: 'ok', trend: 3, starter: true,
-        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 7.9 } }),
-      mk({ id: 's7', name: 'Oihan Sancet', short: 'Sancet', team: 'ATH', pos: 'MED', price: 13.4, points: 44, avg: 4.9, form: [4, 2, 6, 3, 2], health: 'duda', trend: -3, starter: true,
-        last: { goals: 0, assists: 0, minutes: 58, subbedAt: 58, rating: 5.9 } }),
-      mk({ id: 's8', name: 'Isco Alarcón', short: 'Isco', team: 'BET', pos: 'MED', price: 10.2, points: 30, avg: 5.0, form: [0, 0, 0, 5, 7], health: 'lesionado', trend: -8, starter: true,
-        last: { goals: 0, assists: 0, minutes: 0, subbedAt: null, rating: 0 } }),
-      mk({ id: 's9', name: 'Robert Lewandowski', short: 'Lewandowski', team: 'BAR', pos: 'DEL', price: 16.8, points: 58, avg: 6.4, form: [4, 2, 9, 3, 2], health: 'ok', trend: -5, starter: true,
-        last: { goals: 0, assists: 0, minutes: 71, subbedAt: 71, rating: 6.0 } }),
-      mk({ id: 's10', name: 'Iñaki Williams', short: 'I. Williams', team: 'ATH', pos: 'DEL', price: 11.2, points: 35, avg: 3.9, form: [3, 1, 4, 2, 1], health: 'ok', trend: -7, starter: true,
-        last: { goals: 0, assists: 0, minutes: 45, subbedAt: 45, rating: 5.2 } }),
-      mk({ id: 's11', name: 'Ante Budimir', short: 'Budimir', team: 'OSA', pos: 'DEL', price: 12.7, points: 63, avg: 7.0, form: [10, 6, 7, 9, 8], health: 'ok', trend: 6, starter: true,
-        last: { goals: 2, assists: 0, minutes: 90, subbedAt: null, rating: 8.4 } }),
-      // Banquillo
-      mk({ id: 's12', name: 'Marko Dmitrović', short: 'Dmitrović', team: 'ESP', pos: 'POR', price: 4.2, points: 31, avg: 3.4, form: [4, 3, 5, 2, 4], health: 'ok', trend: 0, starter: false,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.5 } }),
-      mk({ id: 's13', name: 'Alejandro Catena', short: 'Catena', team: 'OSA', pos: 'DEF', price: 4.5, points: 33, avg: 3.7, form: [5, 4, 3, 6, 4], health: 'ok', trend: 2, starter: false,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.9 } }),
-      mk({ id: 's14', name: 'Jon Moncayola', short: 'Moncayola', team: 'OSA', pos: 'MED', price: 3.9, points: 29, avg: 3.2, form: [3, 4, 2, 5, 4], health: 'ok', trend: 1, starter: false,
-        last: { goals: 0, assists: 1, minutes: 84, subbedAt: 84, rating: 6.6 } }),
+      P('s1', 'Álex Remiro', 'Remiro', 'RSO', 'POR', 9.8, 4.8, [6, 4, 2, 5, 3], 'ok', 2, 0, 0, 90, null, 6.4, S),
+      P('s2', 'Jules Koundé', 'Koundé', 'BAR', 'DEF', 14.5, 6.1, [8, 7, 4, 9, 6], 'ok', 4, 0, 1, 90, null, 7.6, S),
+      P('s3', 'Robin Le Normand', 'Le Normand', 'ATM', 'DEF', 7.9, 3.0, [2, 1, 3, 0, 1], 'ok', -6, 0, 0, 45, 45, 5.1, S),
+      P('s4', 'Raúl Asencio', 'Asencio', 'RMA', 'DEF', 9.1, 4.3, [5, 6, 2, 4, 5], 'ok', 1, 0, 0, 90, null, 6.8, S),
+      P('s5', 'Aitor Paredes', 'Paredes', 'ATH', 'DEF', 6.4, 2.8, [3, 2, 1, 2, 0], 'duda', -4, 0, 0, 62, 62, 5.5, S),
+      P('s6', 'Federico Valverde', 'Valverde', 'RMA', 'MED', 17.2, 7.2, [9, 6, 8, 10, 7], 'ok', 3, 1, 0, 90, null, 7.9, S),
+      P('s7', 'Oihan Sancet', 'Sancet', 'ATH', 'MED', 13.4, 4.9, [4, 2, 6, 3, 2], 'duda', -3, 0, 0, 58, 58, 5.9, S),
+      P('s8', 'Isco Alarcón', 'Isco', 'BET', 'MED', 10.2, 5.0, [0, 0, 0, 5, 7], 'lesionado', -8, 0, 0, 0, null, 0, S),
+      P('s9', 'Robert Lewandowski', 'Lewandowski', 'BAR', 'DEL', 16.8, 6.4, [4, 2, 9, 3, 2], 'ok', -5, 0, 0, 71, 71, 6.0, S),
+      P('s10', 'Iñaki Williams', 'I. Williams', 'ATH', 'DEL', 11.2, 3.9, [3, 1, 4, 2, 1], 'ok', -7, 0, 0, 45, 45, 5.2, S),
+      P('s11', 'Ante Budimir', 'Budimir', 'OSA', 'DEL', 12.7, 7.0, [10, 6, 7, 9, 8], 'ok', 6, 2, 0, 90, null, 8.4, S),
+      P('s12', 'Marko Dmitrović', 'Dmitrović', 'ESP', 'POR', 4.2, 3.4, [4, 3, 5, 2, 4], 'ok', 0, 0, 0, 90, null, 6.5, B),
+      P('s13', 'Alejandro Catena', 'Catena', 'OSA', 'DEF', 4.5, 3.7, [5, 4, 3, 6, 4], 'ok', 2, 0, 0, 90, null, 6.9, B),
+      P('s14', 'Jon Moncayola', 'Moncayola', 'OSA', 'MED', 3.9, 3.2, [3, 4, 2, 5, 4], 'ok', 1, 0, 1, 84, 84, 6.6, B),
     ];
 
     const INITIAL_MARKET = [
-      mk({ id: 'm1', name: 'Joan García', short: 'Joan García', team: 'BAR', pos: 'POR', price: 11.5, points: 57, avg: 6.3, form: [7, 8, 5, 6, 9], health: 'ok', trend: 7,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 7.8 } }),
-      mk({ id: 'm2', name: 'Unai Simón', short: 'U. Simón', team: 'ATH', pos: 'POR', price: 9.0, points: 40, avg: 4.4, form: [3, 5, 4, 2, 6], health: 'ok', trend: -1,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.3 } }),
-      mk({ id: 'm3', name: 'Dean Huijsen', short: 'Huijsen', team: 'RMA', pos: 'DEF', price: 12.8, points: 55, avg: 6.1, form: [7, 6, 8, 5, 7], health: 'ok', trend: 9,
-        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 7.7 } }),
-      mk({ id: 'm4', name: 'Marc Pubill', short: 'Pubill', team: 'ATM', pos: 'DEF', price: 6.2, points: 36, avg: 4.5, form: [4, 6, 3, 7, 8], health: 'ok', trend: 12,
-        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 7.4 } }),
-      mk({ id: 'm5', name: 'Pau Cubarsí', short: 'Cubarsí', team: 'BAR', pos: 'DEF', price: 13.9, points: 50, avg: 5.6, form: [6, 5, 7, 4, 6], health: 'ok', trend: 3,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 7.1 } }),
-      mk({ id: 'm6', name: 'David Hancko', short: 'Hancko', team: 'ATM', pos: 'DEF', price: 9.4, points: 41, avg: 4.6, form: [5, 4, 6, 5, 3], health: 'ok', trend: 2,
-        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 6.9 } }),
-      mk({ id: 'm7', name: 'Álex Baena', short: 'Baena', team: 'VIL', pos: 'MED', price: 15.1, points: 64, avg: 7.1, form: [8, 9, 6, 7, 10], health: 'ok', trend: 8,
-        last: { goals: 0, assists: 2, minutes: 90, subbedAt: null, rating: 8.2 } }),
-      mk({ id: 'm8', name: 'Fermín López', short: 'Fermín', team: 'BAR', pos: 'MED', price: 12.6, points: 49, avg: 6.0, form: [5, 7, 4, 9, 11], health: 'ok', trend: 12,
-        last: { goals: 1, assists: 1, minutes: 82, subbedAt: 82, rating: 8.3 } }),
-      mk({ id: 'm9', name: 'Arda Güler', short: 'Arda Güler', team: 'RMA', pos: 'MED', price: 14.0, points: 53, avg: 6.2, form: [6, 8, 7, 5, 9], health: 'ok', trend: 10,
-        last: { goals: 1, assists: 0, minutes: 77, subbedAt: 77, rating: 7.9 } }),
-      mk({ id: 'm10', name: 'Pablo Barrios', short: 'Barrios', team: 'ATM', pos: 'MED', price: 10.4, points: 42, avg: 4.8, form: [4, 5, 6, 3, 5], health: 'ok', trend: 1,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.8 } }),
-      mk({ id: 'm11', name: 'Mikel Oyarzabal', short: 'Oyarzabal', team: 'RSO', pos: 'DEL', price: 15.9, points: 60, avg: 6.7, form: [6, 8, 5, 9, 10], health: 'ok', trend: 12,
-        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 8.0 } }),
-      mk({ id: 'm12', name: 'Julián Álvarez', short: 'J. Álvarez', team: 'ATM', pos: 'DEL', price: 21.0, points: 74, avg: 7.8, form: [9, 7, 10, 6, 8], health: 'ok', trend: 6,
-        last: { goals: 1, assists: 1, minutes: 90, subbedAt: null, rating: 8.1 } }),
-      mk({ id: 'm13', name: 'Ayoze Pérez', short: 'Ayoze', team: 'VIL', pos: 'DEL', price: 10.8, points: 47, avg: 5.6, form: [7, 3, 6, 8, 5], health: 'ok', trend: 7,
-        last: { goals: 1, assists: 0, minutes: 85, subbedAt: 85, rating: 7.5 } }),
-      mk({ id: 'm14', name: 'Kike García', short: 'Kike García', team: 'ESP', pos: 'DEL', price: 8.3, points: 44, avg: 5.2, form: [5, 6, 4, 7, 9], health: 'ok', trend: 9,
-        last: { goals: 1, assists: 0, minutes: 88, subbedAt: 88, rating: 7.6 } }),
-      mk({ id: 'm15', name: 'Vinícius Júnior', short: 'Vinícius', team: 'RMA', pos: 'DEL', price: 24.5, points: 66, avg: 7.3, form: [6, 9, 4, 8, 7], health: 'sancionado', trend: -2,
-        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 7.0 } }),
+      P('m1', 'Joan García', 'Joan García', 'BAR', 'POR', 11.5, 6.3, [7, 8, 5, 6, 9], 'ok', 7, 0, 0, 90, null, 7.8),
+      P('m2', 'Unai Simón', 'U. Simón', 'ATH', 'POR', 9.0, 4.4, [3, 5, 4, 2, 6], 'ok', -1, 0, 0, 90, null, 6.3),
+      P('m3', 'Dean Huijsen', 'Huijsen', 'RMA', 'DEF', 12.8, 6.1, [7, 6, 8, 5, 7], 'ok', 9, 1, 0, 90, null, 7.7),
+      P('m4', 'Marc Pubill', 'Pubill', 'ATM', 'DEF', 6.2, 4.5, [4, 6, 3, 7, 8], 'ok', 12, 1, 0, 90, null, 7.4),
+      P('m5', 'Pau Cubarsí', 'Cubarsí', 'BAR', 'DEF', 13.9, 5.6, [6, 5, 7, 4, 6], 'ok', 3, 0, 0, 90, null, 7.1),
+      P('m6', 'David Hancko', 'Hancko', 'ATM', 'DEF', 9.4, 4.6, [5, 4, 6, 5, 3], 'ok', 2, 0, 1, 90, null, 6.9),
+      P('m7', 'Álex Baena', 'Baena', 'VIL', 'MED', 15.1, 7.1, [8, 9, 6, 7, 10], 'ok', 8, 0, 2, 90, null, 8.2),
+      P('m8', 'Fermín López', 'Fermín', 'BAR', 'MED', 12.6, 6.0, [5, 7, 4, 9, 11], 'ok', 12, 1, 1, 82, 82, 8.3),
+      P('m9', 'Arda Güler', 'Arda Güler', 'RMA', 'MED', 14.0, 6.2, [6, 8, 7, 5, 9], 'ok', 10, 1, 0, 77, 77, 7.9),
+      P('m10', 'Pablo Barrios', 'Barrios', 'ATM', 'MED', 10.4, 4.8, [4, 5, 6, 3, 5], 'ok', 1, 0, 0, 90, null, 6.8),
+      P('m11', 'Mikel Oyarzabal', 'Oyarzabal', 'RSO', 'DEL', 15.9, 6.7, [6, 8, 5, 9, 10], 'ok', 12, 1, 0, 90, null, 8.0),
+      P('m12', 'Julián Álvarez', 'J. Álvarez', 'ATM', 'DEL', 21.0, 7.8, [9, 7, 10, 6, 8], 'ok', 6, 1, 1, 90, null, 8.1),
+      P('m13', 'Ayoze Pérez', 'Ayoze', 'VIL', 'DEL', 10.8, 5.6, [7, 3, 6, 8, 5], 'ok', 7, 1, 0, 85, 85, 7.5),
+      P('m14', 'Kike García', 'Kike García', 'ESP', 'DEL', 8.3, 5.2, [5, 6, 4, 7, 9], 'ok', 9, 1, 0, 88, 88, 7.6),
+      P('m15', 'Vinícius Júnior', 'Vinícius', 'RMA', 'DEL', 24.5, 7.3, [6, 9, 4, 8, 7], 'sancionado', -2, 0, 1, 90, null, 7.0),
     ];
 
-    /* Datos que "detecta" el OCR simulado */
+    // Lo que "lee" el modo demo del OCR
     const OCR_SQUAD = [
-      mk({ id: 'o1', name: 'Jan Oblak', short: 'Oblak', team: 'ATM', pos: 'POR', price: 12.1, points: 52, avg: 5.4, form: [5, 7, 4, 6, 5], health: 'ok', trend: 1, starter: true,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 7.0 } }),
-      mk({ id: 'o2', name: 'Alejandro Balde', short: 'Balde', team: 'BAR', pos: 'DEF', price: 11.0, points: 45, avg: 5.0, form: [6, 4, 5, 3, 6], health: 'ok', trend: 2, starter: true,
-        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 7.2 } }),
-      mk({ id: 'o3', name: 'Óscar Mingueza', short: 'Mingueza', team: 'CEL', pos: 'DEF', price: 8.6, points: 40, avg: 4.4, form: [5, 3, 6, 4, 5], health: 'ok', trend: 3, starter: true,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.7 } }),
-      mk({ id: 'o4', name: 'Daniel Carvajal', short: 'Carvajal', team: 'RMA', pos: 'DEF', price: 10.3, points: 23, avg: 3.8, form: [0, 0, 4, 3, 2], health: 'duda', trend: -5, starter: true,
-        last: { goals: 0, assists: 0, minutes: 46, subbedAt: 46, rating: 5.6 } }),
-      mk({ id: 'o5', name: 'Clément Lenglet', short: 'Lenglet', team: 'ATM', pos: 'DEF', price: 5.6, points: 21, avg: 2.9, form: [2, 3, 1, 2, 3], health: 'ok', trend: -2, starter: true,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 5.9 } }),
-      mk({ id: 'o6', name: 'Pedri González', short: 'Pedri', team: 'BAR', pos: 'MED', price: 18.4, points: 70, avg: 7.0, form: [8, 9, 6, 7, 8], health: 'ok', trend: 4, starter: true,
-        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 8.0 } }),
-      mk({ id: 'o7', name: 'Koke Resurrección', short: 'Koke', team: 'ATM', pos: 'MED', price: 6.9, points: 26, avg: 3.1, form: [2, 3, 1, 4, 2], health: 'ok', trend: -4, starter: true,
-        last: { goals: 0, assists: 0, minutes: 45, subbedAt: 45, rating: 5.4 } }),
-      mk({ id: 'o8', name: 'Brais Méndez', short: 'Brais', team: 'RSO', pos: 'MED', price: 8.8, points: 38, avg: 4.5, form: [4, 6, 3, 5, 4], health: 'ok', trend: 2, starter: true,
-        last: { goals: 0, assists: 1, minutes: 75, subbedAt: 75, rating: 6.9 } }),
-      mk({ id: 'o9', name: 'Kylian Mbappé', short: 'Mbappé', team: 'RMA', pos: 'DEL', price: 27.5, points: 92, avg: 9.2, form: [10, 12, 8, 9, 11], health: 'ok', trend: 3, starter: true,
-        last: { goals: 2, assists: 0, minutes: 90, subbedAt: null, rating: 9.0 } }),
-      mk({ id: 'o10', name: 'Borja Iglesias', short: 'B. Iglesias', team: 'CEL', pos: 'DEL', price: 7.1, points: 30, avg: 3.6, form: [2, 4, 1, 3, 2], health: 'ok', trend: -6, starter: true,
-        last: { goals: 0, assists: 0, minutes: 45, subbedAt: 45, rating: 5.3 } }),
-      mk({ id: 'o11', name: 'Raphinha', short: 'Raphinha', team: 'BAR', pos: 'DEL', price: 19.6, points: 64, avg: 7.4, form: [0, 0, 7, 9, 8], health: 'lesionado', trend: -9, starter: true,
-        last: { goals: 0, assists: 0, minutes: 0, subbedAt: null, rating: 0 } }),
-      mk({ id: 'o12', name: 'Paulo Gazzaniga', short: 'Gazzaniga', team: 'GIR', pos: 'POR', price: 3.8, points: 28, avg: 3.1, form: [3, 2, 4, 3, 3], health: 'ok', trend: 0, starter: false,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.2 } }),
-      mk({ id: 'o13', name: 'Javi Galán', short: 'J. Galán', team: 'ATM', pos: 'DEF', price: 4.9, points: 30, avg: 3.4, form: [3, 4, 3, 2, 5], health: 'ok', trend: 1, starter: false,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.4 } }),
-      mk({ id: 'o14', name: 'Pape Gueye', short: 'P. Gueye', team: 'VIL', pos: 'MED', price: 5.4, points: 34, avg: 3.8, form: [4, 3, 5, 4, 4], health: 'ok', trend: 2, starter: false,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.7 } }),
+      P('o1', 'Jan Oblak', 'Oblak', 'ATM', 'POR', 12.1, 5.4, [5, 7, 4, 6, 5], 'ok', 1, 0, 0, 90, null, 7.0),
+      P('o2', 'Alejandro Balde', 'Balde', 'BAR', 'DEF', 11.0, 5.0, [6, 4, 5, 3, 6], 'ok', 2, 0, 1, 90, null, 7.2),
+      P('o3', 'Óscar Mingueza', 'Mingueza', 'CEL', 'DEF', 8.6, 4.4, [5, 3, 6, 4, 5], 'ok', 3, 0, 0, 90, null, 6.7),
+      P('o4', 'Daniel Carvajal', 'Carvajal', 'RMA', 'DEF', 10.3, 3.8, [0, 0, 4, 3, 2], 'duda', -5, 0, 0, 46, 46, 5.6),
+      P('o5', 'Clément Lenglet', 'Lenglet', 'ATM', 'DEF', 5.6, 2.9, [2, 3, 1, 2, 3], 'ok', -2, 0, 0, 90, null, 5.9),
+      P('o6', 'Pedri González', 'Pedri', 'BAR', 'MED', 18.4, 7.0, [8, 9, 6, 7, 8], 'ok', 4, 0, 1, 90, null, 8.0),
+      P('o7', 'Koke Resurrección', 'Koke', 'ATM', 'MED', 6.9, 3.1, [2, 3, 1, 4, 2], 'ok', -4, 0, 0, 45, 45, 5.4),
+      P('o8', 'Brais Méndez', 'Brais', 'RSO', 'MED', 8.8, 4.5, [4, 6, 3, 5, 4], 'ok', 2, 0, 1, 75, 75, 6.9),
+      P('o9', 'Kylian Mbappé', 'Mbappé', 'RMA', 'DEL', 27.5, 9.2, [10, 12, 8, 9, 11], 'ok', 3, 2, 0, 90, null, 9.0),
+      P('o10', 'Borja Iglesias', 'B. Iglesias', 'CEL', 'DEL', 7.1, 3.6, [2, 4, 1, 3, 2], 'ok', -6, 0, 0, 45, 45, 5.3),
+      P('o11', 'Raphinha', 'Raphinha', 'BAR', 'DEL', 19.6, 7.4, [0, 0, 7, 9, 8], 'lesionado', -9, 0, 0, 0, null, 0),
+      P('o12', 'Paulo Gazzaniga', 'Gazzaniga', 'GIR', 'POR', 3.8, 3.1, [3, 2, 4, 3, 3], 'ok', 0, 0, 0, 90, null, 6.2),
+      P('o13', 'Javi Galán', 'J. Galán', 'ATM', 'DEF', 4.9, 3.4, [3, 4, 3, 2, 5], 'ok', 1, 0, 0, 90, null, 6.4),
+      P('o14', 'Pape Gueye', 'P. Gueye', 'VIL', 'MED', 5.4, 3.8, [4, 3, 5, 4, 4], 'ok', 2, 0, 0, 90, null, 6.7),
     ];
+    const OCR_BUDGET = 12.4;
 
     const OCR_MARKET = [
-      mk({ id: 'x1', name: 'Lamine Yamal', short: 'Lamine', team: 'BAR', pos: 'DEL', price: 26.9, points: 81, avg: 8.6, form: [9, 11, 7, 10, 12], health: 'ok', trend: 8, isNew: true,
-        last: { goals: 1, assists: 2, minutes: 90, subbedAt: null, rating: 9.2 } }),
-      mk({ id: 'x2', name: 'Takefusa Kubo', short: 'Kubo', team: 'RSO', pos: 'DEL', price: 11.9, points: 46, avg: 5.4, form: [4, 6, 7, 6, 9], health: 'ok', trend: 11, isNew: true,
-        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 7.8 } }),
-      mk({ id: 'x3', name: 'Johnny Cardoso', short: 'Cardoso', team: 'ATM', pos: 'MED', price: 7.7, points: 33, avg: 4.6, form: [3, 5, 6, 5, 7], health: 'ok', trend: 9, isNew: true,
-        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 7.3 } }),
-      mk({ id: 'x4', name: 'Pau Torres', short: 'Pau Torres', team: 'VIL', pos: 'DEF', price: 8.9, points: 37, avg: 4.9, form: [6, 5, 4, 7, 6], health: 'ok', trend: 6, isNew: true,
-        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 7.2 } }),
-      mk({ id: 'x5', name: 'Iago Aspas', short: 'Aspas', team: 'CEL', pos: 'DEL', price: 9.6, points: 43, avg: 5.3, form: [6, 4, 8, 5, 7], health: 'ok', trend: 5, isNew: true,
-        last: { goals: 1, assists: 0, minutes: 70, subbedAt: 70, rating: 7.4 } }),
+      P('x1', 'Lamine Yamal', 'Lamine', 'BAR', 'DEL', 26.9, 8.6, [9, 11, 7, 10, 12], 'ok', 8, 1, 2, 90, null, 9.2, { isNew: true }),
+      P('x2', 'Takefusa Kubo', 'Kubo', 'RSO', 'DEL', 11.9, 5.4, [4, 6, 7, 6, 9], 'ok', 11, 1, 0, 90, null, 7.8, { isNew: true }),
+      P('x3', 'Johnny Cardoso', 'Cardoso', 'ATM', 'MED', 7.7, 4.6, [3, 5, 6, 5, 7], 'ok', 9, 0, 1, 90, null, 7.3, { isNew: true }),
+      P('x4', 'Pau Torres', 'Pau Torres', 'VIL', 'DEF', 8.9, 4.9, [6, 5, 4, 7, 6], 'ok', 6, 0, 0, 90, null, 7.2, { isNew: true }),
+      P('x5', 'Iago Aspas', 'Aspas', 'CEL', 'DEL', 9.6, 5.3, [6, 4, 8, 5, 7], 'ok', 5, 1, 0, 70, 70, 7.4, { isNew: true }),
     ];
 
+    // Plantillas de los rivales de la liga
+    const RIVAL_POOL = [
+      P('p1', 'Thibaut Courtois', 'Courtois', 'RMA', 'POR', 13.2, 5.9, [6, 7, 5, 4, 8], 'ok', 2, 0, 0, 90, null, 7.2),
+      P('p2', 'Álvaro Carreras', 'Carreras', 'RMA', 'DEF', 10.6, 5.2, [5, 6, 4, 7, 5], 'ok', 4, 0, 1, 90, null, 7.1),
+      P('p3', 'Eric García', 'Eric García', 'BAR', 'DEF', 8.1, 4.6, [4, 5, 6, 3, 5], 'ok', 1, 0, 0, 90, null, 6.8),
+      P('p4', 'José María Giménez', 'Giménez', 'ATM', 'DEF', 7.4, 3.9, [3, 4, 0, 5, 4], 'duda', -3, 0, 0, 58, 58, 5.8),
+      P('p5', 'Yuri Berchiche', 'Yuri', 'ATH', 'DEF', 5.9, 3.6, [4, 3, 2, 5, 3], 'ok', -1, 0, 0, 90, null, 6.4),
+      P('p6', 'Frenkie de Jong', 'De Jong', 'BAR', 'MED', 13.8, 5.8, [6, 5, 7, 6, 5], 'ok', 2, 0, 1, 90, null, 7.3),
+      P('p7', 'Pablo Fornals', 'Fornals', 'BET', 'MED', 9.7, 5.1, [5, 7, 4, 6, 4], 'ok', 3, 1, 0, 80, 80, 7.2),
+      P('p8', 'Dani Olmo', 'Olmo', 'BAR', 'MED', 14.6, 5.5, [0, 6, 8, 3, 7], 'ok', 5, 1, 0, 65, 65, 7.4),
+      P('p9', 'Antony', 'Antony', 'BET', 'DEL', 13.5, 6.4, [8, 5, 7, 9, 6], 'ok', 6, 1, 1, 90, null, 8.0),
+      P('p10', 'Alexander Sørloth', 'Sørloth', 'ATM', 'DEL', 12.2, 5.6, [7, 2, 9, 4, 5], 'ok', 1, 1, 0, 70, 70, 7.0),
+      P('p11', 'Rodrygo Goes', 'Rodrygo', 'RMA', 'DEL', 16.4, 5.3, [4, 6, 3, 5, 7], 'ok', 0, 0, 1, 75, 75, 7.0),
+      P('p12', 'David Soria', 'Soria', 'GET', 'POR', 6.1, 4.7, [5, 6, 3, 5, 6], 'ok', 1, 0, 0, 90, null, 6.9),
+      P('p13', 'Djené Dakonam', 'Djené', 'GET', 'DEF', 5.2, 3.8, [4, 3, 5, 4, 3], 'ok', 0, 0, 0, 90, null, 6.5),
+      P('p14', 'Florian Lejeune', 'Lejeune', 'RAY', 'DEF', 6.0, 4.1, [5, 4, 3, 6, 4], 'ok', 1, 0, 0, 90, null, 6.7),
+      P('p15', 'Iván Balliu', 'Balliu', 'RAY', 'DEF', 4.8, 3.5, [3, 4, 4, 3, 2], 'ok', -2, 0, 0, 90, null, 6.2),
+      P('p16', 'Pep Chavarría', 'Chavarría', 'RAY', 'DEF', 5.1, 3.9, [4, 5, 3, 4, 4], 'ok', 1, 0, 0, 90, null, 6.6),
+      P('p17', 'Unai López', 'Unai López', 'RAY', 'MED', 6.3, 4.4, [5, 4, 6, 3, 5], 'ok', 2, 0, 0, 90, null, 6.8),
+      P('p18', 'Isi Palazón', 'Isi', 'RAY', 'MED', 8.4, 5.0, [6, 4, 7, 5, 3], 'ok', 3, 0, 1, 85, 85, 7.0),
+      P('p19', 'Pathé Ciss', 'Ciss', 'RAY', 'MED', 5.6, 3.9, [3, 5, 4, 4, 3], 'ok', 0, 0, 0, 90, null, 6.4),
+      P('p20', 'Jorge de Frutos', 'De Frutos', 'RAY', 'DEL', 9.2, 5.3, [6, 7, 4, 5, 8], 'ok', 6, 1, 0, 90, null, 7.6),
+      P('p21', 'Borja Mayoral', 'Mayoral', 'GET', 'DEL', 7.6, 4.5, [5, 3, 6, 4, 2], 'duda', -3, 0, 0, 60, 60, 5.9),
+      P('p22', 'Álvaro García', 'Álvaro García', 'RAY', 'DEL', 6.8, 4.2, [4, 5, 3, 6, 4], 'ok', 1, 0, 0, 78, 78, 6.6),
+      P('p23', 'Sergio Herrera', 'S. Herrera', 'OSA', 'POR', 5.5, 4.3, [4, 5, 4, 3, 6], 'ok', 0, 0, 0, 90, null, 6.6),
+      P('p24', 'Marcos Llorente', 'Llorente', 'ATM', 'DEF', 11.4, 5.6, [6, 7, 5, 4, 8], 'ok', 4, 0, 1, 90, null, 7.5),
+      P('p25', 'Jesús Areso', 'Areso', 'ATH', 'DEF', 6.7, 4.4, [5, 4, 6, 3, 5], 'ok', 2, 0, 0, 90, null, 6.8),
+      P('p26', 'Natan', 'Natan', 'BET', 'DEF', 6.2, 4.0, [4, 3, 5, 5, 3], 'ok', 1, 0, 0, 90, null, 6.5),
+      P('p27', 'Juan Foyth', 'Foyth', 'VIL', 'DEF', 7.0, 4.2, [5, 6, 0, 4, 5], 'ok', 0, 0, 0, 90, null, 6.7),
+      P('p28', 'Conor Gallagher', 'Gallagher', 'ATM', 'MED', 9.9, 4.8, [5, 4, 6, 5, 4], 'ok', 1, 0, 0, 90, null, 6.9),
+      P('p29', 'Dani Parejo', 'Parejo', 'VIL', 'MED', 8.0, 5.0, [6, 5, 4, 7, 5], 'ok', 2, 0, 1, 80, 80, 7.1),
+      P('p30', 'Mikel Jauregizar', 'Jauregizar', 'ATH', 'MED', 7.2, 4.6, [5, 6, 4, 4, 5], 'ok', 3, 0, 0, 90, null, 6.9),
+      P('p31', 'Giuliano Simeone', 'G. Simeone', 'ATM', 'DEL', 9.8, 5.4, [6, 7, 5, 4, 6], 'ok', 5, 0, 1, 90, null, 7.3),
+      P('p32', 'Gerard Moreno', 'G. Moreno', 'VIL', 'DEL', 10.1, 5.0, [0, 0, 6, 7, 8], 'ok', 4, 1, 0, 75, 75, 7.5),
+      P('p33', 'Nico Williams', 'N. Williams', 'ATH', 'DEL', 18.2, 6.0, [7, 4, 6, 8, 5], 'lesionado', -6, 0, 0, 0, null, 0),
+    ];
+
+    const ALL_PLAYERS = [...INITIAL_SQUAD, ...INITIAL_MARKET, ...OCR_SQUAD, ...OCR_MARKET, ...RIVAL_POOL];
+    const DB = Object.fromEntries(ALL_PLAYERS.map((p) => [p.id, p]));
+    const ids = (from, to, prefix) => Array.from({ length: to - from + 1 }, (_, i) => prefix + (from + i));
+
     const INITIAL_RIVALS = [
-      { id: 'r1', name: 'Los Galácticos de Kike', budget: 34.6 },
-      { id: 'r2', name: 'Fede FC Turbo', budget: 21.3 },
-      { id: 'r3', name: 'Rayo Cuñao', budget: 12.8 },
-      { id: 'r4', name: 'Atlético Bocata', budget: 27.9 },
+      { id: 'r1', name: 'Los Galácticos de Kike', budget: 34.6, points: 612, last: 61, squadIds: ids(1, 11, 'o') },
+      { id: 'r2', name: 'Fede FC Turbo', budget: 21.3, points: 588, last: 55, squadIds: ids(1, 11, 'p') },
+      { id: 'r3', name: 'Rayo Cuñao', budget: 12.8, points: 541, last: 47, squadIds: ids(12, 22, 'p') },
+      { id: 'r4', name: 'Atlético Bocata', budget: 27.9, points: 575, last: 52, squadIds: ids(23, 33, 'p') },
+    ];
+
+    const INITIAL_BIDS = [
+      { id: 'b1', j: 10, who: 'Los Galácticos de Kike', type: 'compra', player: 'Kylian Mbappé', amount: 28.4 },
+      { id: 'b2', j: 10, who: 'Fede FC Turbo', type: 'puja', player: 'Antony', amount: 13.9 },
+      { id: 'b3', j: 10, who: 'Rayo Cuñao', type: 'venta', player: 'Óscar Valentín', amount: 3.1 },
+      { id: 'b4', j: 9, who: 'Atlético Bocata', type: 'puja', player: 'Nico Williams', amount: 19.0 },
+      { id: 'b5', j: 9, who: 'Tú', type: 'compra', player: 'Ante Budimir', amount: 11.8 },
     ];
 
     const INITIAL_BUDGET = 22.0;
-    const OCR_BUDGET = 12.4; // caja leída de la captura de equipo
-    const FORMATION = { POR: 1, DEF: 4, MED: 3, DEL: 3 };
+    const INITIAL_POINTS = 597;
+    const FORMATIONS = {
+      '4-3-3': { POR: 1, DEF: 4, MED: 3, DEL: 3 },
+      '4-4-2': { POR: 1, DEF: 4, MED: 4, DEL: 2 },
+      '3-5-2': { POR: 1, DEF: 3, MED: 5, DEL: 2 },
+      '3-4-3': { POR: 1, DEF: 3, MED: 4, DEL: 3 },
+      '5-3-2': { POR: 1, DEF: 5, MED: 3, DEL: 2 },
+      '4-5-1': { POR: 1, DEF: 4, MED: 5, DEL: 1 },
+    };
+    const POSITIONS = ['POR', 'DEF', 'MED', 'DEL'];
     const POS_LABEL = { POR: 'Portero', DEF: 'Defensa', MED: 'Medio', DEL: 'Delantero' };
     const POS_COLOR = { POR: '#ffc53d', DEF: '#3fa8ff', MED: '#39ff88', DEL: '#ff3b6b' };
-    const STORAGE_KEY = 'fantasy-hacker-v1';
+    const STORAGE_KEY = 'fantasy-hacker-v2';
 
     /* =====================================================
        MOTOR DE PROYECCIÓN
@@ -349,26 +406,54 @@
       lesionado: { label: 'Lesionado', cls: 'text-danger', dot: 'bg-danger' },
       sancionado: { label: 'Sancionado', cls: 'text-danger', dot: 'bg-danger' },
     };
-
-    const mean = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
     const formAvg = (p) => mean(p.form);
-    const nextOf = (p) => (TEAMS[p.team] || { next: { rival: '—', diff: 3, home: true } }).next;
-
     function projection(p) {
       const n = nextOf(p);
       const base = 0.45 * p.avg + 0.55 * formAvg(p);
-      const minutesFactor = p.last.minutes >= 70 ? 1.05 : p.last.minutes >= 46 ? 0.9 : p.last.minutes > 0 ? 0.8 : 0.85;
-      const val = base * DIFF_MULT[n.diff] * HEALTH_MULT[p.health] * minutesFactor;
-      return Math.round(val * 10) / 10;
+      const m = p.last.minutes;
+      const minutesFactor = m >= 70 ? 1.05 : m >= 46 ? 0.9 : m > 0 ? 0.8 : 0.85;
+      return r1(base * DIFF_MULT[n.diff] * (HEALTH_MULT[p.health] ?? 1) * minutesFactor);
     }
 
-    const fmtM = (m) => `${m.toFixed(1)}M€`;
-    const fmtEUR = (m) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 }).format(Math.round(m * 1e6)) + ' €';
-    const sign = (n) => (n > 0 ? '+' : '') + n;
+    function autoLineup(squad, formation) {
+      const need = FORMATIONS[formation];
+      const picked = new Set();
+      POSITIONS.forEach((pos) => {
+        squad.filter((p) => p.pos === pos)
+          .sort((a, b) => projection(b) - projection(a))
+          .slice(0, need[pos])
+          .forEach((p) => picked.add(p.id));
+      });
+      return squad.map((p) => ({ ...p, starter: picked.has(p.id) }));
+    }
+    const holesOf = (squad, formation) => {
+      const need = FORMATIONS[formation];
+      const h = {};
+      POSITIONS.forEach((pos) => { h[pos] = Math.max(0, need[pos] - squad.filter((p) => p.starter && p.pos === pos).length); });
+      return h;
+    };
+    function bestCaptain(squad) {
+      const st = squad.filter((p) => p.starter);
+      return st.length ? st.reduce((a, b) => (projection(b) > projection(a) ? b : a)) : null;
+    }
+
+    /* Historial de precios (7 días) + previsión */
+    function genHist(p) {
+      const rnd = seeded(p.id + p.name);
+      const arr = [p.price];
+      let cur = p.price;
+      for (let i = 0; i < 6; i++) {
+        cur = cur / (1 + p.trend / 100 / 5 + (rnd() - 0.5) * 0.02);
+        arr.unshift(r2(cur));
+      }
+      return arr;
+    }
+    const histOf = (p) => (p.hist && p.hist.length >= 2 ? p.hist : genHist(p));
 
     /* =====================================================
-       IA NARRATIVA: genera hacks y recomendaciones
+       IA NARRATIVA
     ===================================================== */
+    const joinEs = (arr) => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
     function describeGood(p) {
       const r = [];
       const n = nextOf(p);
@@ -376,11 +461,10 @@
       if (p.last.assists > 0) r.push(`dio ${p.last.assists === 1 ? 'una asistencia' : p.last.assists + ' asistencias'}`);
       if (p.last.rating >= 7.5) r.push(`firmó un ${p.last.rating.toFixed(1)} de nota`);
       if (formAvg(p) >= 6.5) r.push(`lleva una racha oculta de ${formAvg(p).toFixed(1)} pts de media en las últimas 5`);
-      if (n.diff <= 2) r.push(`su equipo (${TEAMS[p.team].name}) ${n.home ? 'recibe' : 'visita'} a ${n.rival}, un rival débil (dificultad ${n.diff}/5)`);
+      if (n.diff <= 2) r.push(`su equipo (${teamOf(p.team).name}) ${n.home ? 'recibe' : 'visita'} a ${n.rival}, un rival débil (dificultad ${n.diff}/5)`);
       if (p.trend > 0) r.push(`su precio va a subir un ${p.trend}% esta semana`);
       return r;
     }
-
     function describeBad(p) {
       const r = [];
       const n = nextOf(p);
@@ -394,15 +478,31 @@
       return r;
     }
 
-    const joinEs = (arr) => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
-
-    function generateHacks(squad, market, budget) {
+    function generateHacks(squad, market, budget, formation, captainId) {
       const hacks = [];
       const starters = squad.filter((p) => p.starter);
       const used = new Set();
 
-      const ranked = [...starters].sort((a, b) => projection(a) - projection(b));
-      ranked.forEach((s) => {
+      // Huecos en el once
+      const holes = holesOf(squad, formation);
+      POSITIONS.forEach((pos) => {
+        if (!holes[pos]) return;
+        const opts = market.filter((m) => m.pos === pos && m.health === 'ok' && m.price <= budget && !used.has(m.id))
+          .sort((a, b) => projection(b) - projection(a));
+        const m = opts[0];
+        if (m) used.add(m.id);
+        hacks.push({
+          id: `fill-${pos}`, type: m ? 'fill' : 'alert', severity: 'critical', inId: m ? m.id : null,
+          title: `Tienes ${holes[pos]} hueco${holes[pos] > 1 ? 's' : ''} de ${POS_LABEL[pos].toLowerCase()} en tu ${formation}`,
+          why: m
+            ? `Un hueco son 0 puntos seguros. ${m.name} entra en tu presupuesto (${fmtM(m.price)}) y ${joinEs(describeGood(m)) || `proyecta ${projection(m)} pts`}.`
+            : `No tienes ${POS_LABEL[pos].toLowerCase()}s en el banquillo ni presupuesto para fichar uno. Cambia de formación o vende para liberar caja.`,
+          impact: m ? `+${projection(m).toFixed(1)} pts · Coste ${fmtM(m.price)}` : '0 pts en esa posición',
+          gain: m ? projection(m) : 0,
+        });
+      });
+
+      [...starters].sort((a, b) => projection(a) - projection(b)).forEach((s) => {
         const candidates = market
           .filter((m) => m.pos === s.pos && m.health === 'ok' && !used.has(m.id) && m.price <= budget + s.price)
           .map((m) => ({ m, gain: projection(m) - projection(s) }))
@@ -411,54 +511,51 @@
         if (!candidates.length) return;
         const { m, gain } = candidates[0];
         used.add(m.id);
-        const good = describeGood(m);
-        const bad = describeBad(s);
         const cost = m.price - s.price;
-        const severity = s.health === 'lesionado' || s.health === 'sancionado' ? 'critical' : gain >= 3 ? 'high' : 'mid';
         hacks.push({
-          id: `hack-${s.id}-${m.id}`,
-          type: 'swap',
-          severity,
-          outId: s.id,
-          inId: m.id,
+          id: `hack-${s.id}-${m.id}`, type: 'swap',
+          severity: s.health === 'lesionado' || s.health === 'sancionado' ? 'critical' : gain >= 3 ? 'high' : 'mid',
+          outId: s.id, inId: m.id,
           title: `Cambia a ${s.name} por ${m.name}`,
-          why: `El jugador del mercado ${joinEs(good) || 'tiene mejor proyección'}. En cambio, tu titular ${joinEs(bad) || 'rinde por debajo de su alternativa'}.`,
+          why: `El jugador del mercado ${joinEs(describeGood(m)) || 'tiene mejor proyección'}. En cambio, tu titular ${joinEs(describeBad(s)) || 'rinde por debajo de su alternativa'}.`,
           impact: `+${gain.toFixed(1)} pts proyectados · ${cost >= 0 ? 'Coste neto ' + fmtM(cost) : 'Liberas ' + fmtM(-cost)}`,
           gain,
         });
       });
 
-      // Alertas sin reemplazo asequible
       starters.forEach((s) => {
         if ((s.health === 'lesionado' || s.health === 'sancionado') && !hacks.find((h) => h.outId === s.id)) {
           const bench = squad.find((b) => !b.starter && b.pos === s.pos && b.health === 'ok');
           hacks.push({
-            id: `alert-${s.id}`,
-            type: bench ? 'bench' : 'alert',
-            severity: 'critical',
-            outId: s.id,
-            inId: bench ? bench.id : null,
+            id: `alert-${s.id}`, type: bench ? 'bench' : 'alert', severity: 'critical', outId: s.id, inId: bench ? bench.id : null,
             title: `${s.name} ${s.health === 'lesionado' ? 'LESIONADO' : 'SANCIONADO'} en tu once`,
             why: bench
               ? `No hay fichaje rentable en tu presupuesto, pero ${bench.name} está en tu banquillo y suma ${projection(bench).toFixed(1)} pts proyectados frente a 0.`
               : `Ahora mismo te da 0 puntos y no hay sustituto en caja. Vende para liberar ${fmtM(s.price)} antes de que su precio caiga un ${Math.abs(s.trend)}%.`,
-            impact: bench ? `+${projection(bench).toFixed(1)} pts al instante` : 'Riesgo de 0 puntos',
-            gain: bench ? projection(bench) : 0,
+            impact: bench ? `+${projection(bench).toFixed(1)} pts al instante` : 'Riesgo de 0 puntos', gain: bench ? projection(bench) : 0,
           });
         }
       });
 
-      // Mantener a joyas en subida
+      // Capitán
+      const best = bestCaptain(squad);
+      const cap = squad.find((p) => p.id === captainId && p.starter);
+      if (best && (!cap || projection(best) - projection(cap) >= 1)) {
+        hacks.push({
+          id: `cap-${best.id}`, type: 'captain', severity: 'high', inId: best.id,
+          title: `Dale el brazalete a ${best.name}`,
+          why: `El capitán puntúa doble. ${best.name} es tu titular con mejor proyección (${projection(best)} pts) porque ${joinEs(describeGood(best)) || 'llega en buena forma'}.${cap ? ` ${cap.short} solo proyecta ${projection(cap)} pts.` : ' Ahora mismo no tienes capitán.'}`,
+          impact: `+${(projection(best) - (cap ? projection(cap) : 0)).toFixed(1)} pts extra por el x2`,
+          gain: projection(best) - (cap ? projection(cap) : 0),
+        });
+      }
+
       squad.filter((p) => p.trend >= 4 && p.health === 'ok').slice(0, 2).forEach((p) => {
         hacks.push({
-          id: `hold-${p.id}`,
-          type: 'hold',
-          severity: 'info',
-          outId: p.id,
+          id: `hold-${p.id}`, type: 'hold', severity: 'info', outId: p.id,
           title: `Blinda a ${p.name}`,
           why: `${joinEs(describeGood(p)) || 'Está en forma'}. Venderlo ahora sería regalar su revalorización a la liga. Ponle precio de guerra en la calculadora de cláusulas.`,
-          impact: `Revalorización estimada ${fmtM(p.price * p.trend / 100)}`,
-          gain: 0,
+          impact: `Revalorización estimada ${fmtM(p.price * p.trend / 100)}`, gain: 0,
         });
       });
 
@@ -467,39 +564,257 @@
     }
 
     function generateCards(squad, market) {
-      const buy = market
-        .filter((m) => m.health === 'ok' && (m.trend >= 6 || formAvg(m) >= 6.5))
-        .sort((a, b) => b.trend + formAvg(b) - (a.trend + formAvg(a)))
-        .slice(0, 6)
+      const buy = market.filter((m) => m.health === 'ok' && (m.trend >= 6 || formAvg(m) >= 6.5))
+        .sort((a, b) => b.trend + formAvg(b) - (a.trend + formAvg(a))).slice(0, 6)
         .map((p) => ({ p, reason: p.trend >= 9 ? `Aceleración de mercado +${p.trend}%` : `Racha oculta: ${formAvg(p).toFixed(1)} pts/partido` }));
-      const sell = squad
-        .filter((p) => p.trend <= -3 || p.health === 'lesionado' || p.health === 'sancionado' || formAvg(p) < 2.5)
+      const sell = squad.filter((p) => p.trend <= -3 || p.health === 'lesionado' || p.health === 'sancionado' || formAvg(p) < 2.5)
         .sort((a, b) => a.trend - b.trend)
         .map((p) => ({ p, reason: p.health === 'lesionado' ? 'Lesión: valor en caída libre' : p.health === 'sancionado' ? 'Sancionado esta jornada' : `Precio cayendo ${p.trend}%` }));
       const sellIds = new Set(sell.map((s) => s.p.id));
-      const hold = squad
-        .filter((p) => !sellIds.has(p.id))
-        .sort((a, b) => projection(b) - projection(a))
-        .slice(0, 6)
+      const hold = squad.filter((p) => !sellIds.has(p.id)).sort((a, b) => projection(b) - projection(a)).slice(0, 6)
         .map((p) => ({ p, reason: p.trend > 0 ? `Revalorizando +${p.trend}%` : `Proyección sólida: ${projection(p)} pts` }));
       return { buy, sell, hold };
     }
 
     /* =====================================================
-       PERSISTENCIA (opcional, local)
+       SIMULADOR DE JORNADA
+    ===================================================== */
+    function simPoints(p) {
+      if (HEALTH_MULT[p.health] === 0) return { pts: 0, events: [p.health === 'lesionado' ? '🚑 No jugó' : '🟥 Sancionado'] };
+      if (p.health === 'duda' && Math.random() < 0.4) return { pts: 0, events: ['🩹 No convocado'] };
+      const pts = Math.round(clamp(projection(p) + gauss() * 3.2, -3, 22));
+      const events = [];
+      if (pts >= 10) events.push('⚽ Gol');
+      if (pts >= 13) events.push('⚽ Doblete');
+      if (pts >= 7 && pts < 13 && Math.random() < 0.5) events.push('🅰️ Asistencia');
+      if (p.pos === 'POR' && pts >= 6) events.push('🧤 Portería a 0');
+      if (pts <= 1) events.push(Math.random() < 0.5 ? '🟨 Amarilla' : '🔄 Cambiado pronto');
+      return { pts, events };
+    }
+    function simulateMatchday(squad, captainId, rivals) {
+      const starters = squad.filter((p) => p.starter);
+      const rows = starters.map((p) => {
+        const { pts, events } = simPoints(p);
+        const captain = p.id === captainId;
+        return { p, pts, events, captain, total: captain ? pts * 2 : pts };
+      }).sort((a, b) => b.total - a.total);
+      const mine = rows.reduce((s, r) => s + r.total, 0);
+      const rivalRows = rivals.map((r) => {
+        const sq = r.squadIds.map((id) => DB[id]).filter(Boolean);
+        const pts = sq.map((p) => simPoints(p).pts);
+        const best = Math.max(0, ...pts);
+        return { id: r.id, name: r.name, pts: pts.reduce((s, x) => s + x, 0) + best };
+      });
+      return { rows, mine, rivalRows };
+    }
+    // Evoluciona a un jugador tras la jornada: forma, precio, tendencia y salud
+    function evolvePlayer(p, pts) {
+      const rnd = Math.random();
+      const avg = r1(p.avg * 0.85 + pts * 0.15);
+      const price = r1(Math.max(0.5, p.price * (1 + p.trend / 100)));
+      const trend = clamp(Math.round((pts - p.avg) * 2.2 + (rnd - 0.5) * 4), -12, 15);
+      let health = p.health;
+      if (health === 'lesionado') health = rnd < 0.45 ? 'duda' : 'lesionado';
+      else if (health === 'duda') health = rnd < 0.6 ? 'ok' : 'duda';
+      else if (health === 'sancionado') health = 'ok';
+      else if (rnd < 0.04) health = 'duda';
+      else if (rnd > 0.985) health = 'lesionado';
+      const played = HEALTH_MULT[p.health] > 0 && pts !== 0;
+      const sub = played && pts < 3 ? 45 + Math.floor(Math.random() * 25) : null;
+      return {
+        ...p, avg, price, trend, health, points: p.points + pts,
+        form: [...p.form.slice(1), Math.max(0, pts)],
+        hist: [...histOf(p).slice(1), price],
+        last: {
+          goals: pts >= 13 ? 2 : pts >= 10 ? 1 : 0, assists: pts >= 7 && pts < 10 ? 1 : 0,
+          minutes: played ? (sub || 90) : 0, subbedAt: sub, rating: played ? r1(clamp(5 + pts * 0.3, 4, 9.8)) : 0,
+        },
+      };
+    }
+
+    /* =====================================================
+       OCR REAL: TESSERACT.JS Y CLAUDE VISION
+    ===================================================== */
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) return resolve();
+        const s = document.createElement('script');
+        s.src = src; s.onload = resolve; s.onerror = () => reject(new Error('No se pudo cargar ' + src));
+        document.head.appendChild(s);
+      });
+    }
+    function matchPlayersInText(text) {
+      const t = ' ' + norm(text).replace(/[^a-z0-9ñ. ]+/g, ' ').replace(/\s+/g, ' ') + ' ';
+      const found = [];
+      const seen = new Set();
+      ALL_PLAYERS.forEach((p) => {
+        const keys = [norm(p.short), norm(p.name)];
+        const surname = norm(p.name).split(' ').slice(-1)[0];
+        if (surname.length >= 5) keys.push(surname);
+        if (keys.some((k) => k.length >= 4 && t.includes(' ' + k + ' ')) && !seen.has(p.name)) {
+          seen.add(p.name); found.push(p);
+        }
+      });
+      return found;
+    }
+    function shrinkImage(dataUrl, max = 1568) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const k = Math.min(1, max / Math.max(img.width, img.height));
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.9));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+    const teamCodeFromName = (s) => {
+      const n = norm(s);
+      if (!n) return 'UNK';
+      const up = String(s).toUpperCase();
+      if (TEAMS[up]) return up;
+      return TEAM_CODES.find((c) => norm(TEAMS[c].name).includes(n) || n.includes(norm(TEAMS[c].name))) || String(s).slice(0, 14);
+    };
+    function playerFromExtraction(raw, i) {
+      const n = norm(raw.name);
+      const known = ALL_PLAYERS.find((p) => norm(p.name) === n || norm(p.short) === n || (n.length >= 5 && (norm(p.name).includes(n) || n.includes(norm(p.name)))));
+      if (known) {
+        return { ...known, price: raw.price_millions > 0 ? r1(raw.price_millions) : known.price, points: raw.points > 0 ? raw.points : known.points };
+      }
+      const avg = raw.points > 0 ? r1(clamp(raw.points / 10, 1, 9)) : 4.5;
+      return {
+        id: uid('cv'), name: raw.name, short: raw.name.split(' ').slice(-1)[0], team: teamCodeFromName(raw.team),
+        pos: POSITIONS.includes(raw.position) ? raw.position : 'MED', price: raw.price_millions > 0 ? r1(raw.price_millions) : 5,
+        points: raw.points || 0, avg, form: Array(5).fill(Math.round(avg)), health: 'ok', trend: 0,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.5 },
+      };
+    }
+    async function claudeVisionExtract(apiKey, dataUrl, mode) {
+      const small = await shrinkImage(dataUrl);
+      const [meta, b64] = small.split(',');
+      const mediaType = meta.match(/data:(.*?);/)[1];
+      const schema = {
+        type: 'object', additionalProperties: false, required: ['players', 'budget_millions'],
+        properties: {
+          budget_millions: { type: 'number' },
+          players: {
+            type: 'array',
+            items: {
+              type: 'object', additionalProperties: false,
+              required: ['name', 'team', 'position', 'price_millions', 'points'],
+              properties: {
+                name: { type: 'string' },
+                team: { type: 'string' },
+                position: { type: 'string', enum: ['POR', 'DEF', 'MED', 'DEL'] },
+                price_millions: { type: 'number' },
+                points: { type: 'number' },
+              },
+            },
+          },
+        },
+      };
+      const prompt = mode === 'team'
+        ? 'Esta es una captura de mi plantilla en una app de fútbol fantasy (LaLiga Fantasy, Biwenger o similar). Extrae todos los jugadores visibles: nombre completo, equipo de LaLiga, posición (POR, DEF, MED o DEL), precio en millones de euros y puntos totales. Si un dato no se ve, pon 0. Si aparece el saldo o presupuesto disponible, ponlo en budget_millions; si no, 0.'
+        : 'Esta es una captura del mercado de fichajes de una app de fútbol fantasy (LaLiga Fantasy, Biwenger o similar). Extrae todos los jugadores en venta: nombre completo, equipo de LaLiga, posición (POR, DEF, MED o DEL), precio en millones de euros y puntos totales. Si un dato no se ve, pon 0. budget_millions: 0.';
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2026-10-21',
+          'anthropic-beta': 'server-side-fallback-2026-07-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-5-5',
+          max_tokens: 16000,
+          output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+          fallbacks: 'default',
+          messages: [{ role: 'user', content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+            { type: 'text', text: prompt },
+          ] }],
+        }),
+      });
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try { const e = await res.json(); msg = e.error?.message || msg; } catch (e) { /* sin cuerpo */ }
+        throw new Error(res.status === 401 ? 'API key inválida' : msg);
+      }
+      const data = await res.json();
+      if (data.stop_reason === 'refusal') throw new Error('Claude no pudo analizar esta imagen');
+      if (data.stop_reason === 'max_tokens') throw new Error('Respuesta incompleta, prueba con una captura más pequeña');
+      const text = data.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+      const parsed = JSON.parse(text);
+      return { players: (parsed.players || []).map(playerFromExtraction), budget: parsed.budget_millions || 0 };
+    }
+
+    /* Importación de datos externos (JSON propio o de una API) */
+    function normalizePlayer(raw, i) {
+      const avg = Number(raw.avg) || (raw.points ? r1(raw.points / 10) : 4);
+      const form = Array.isArray(raw.form) && raw.form.length ? raw.form.slice(-5).map(Number) : Array(5).fill(Math.round(avg));
+      while (form.length < 5) form.unshift(Math.round(avg));
+      return {
+        id: String(raw.id || 'imp' + i + '-' + Date.now()), name: String(raw.name || 'Jugador ' + (i + 1)),
+        short: String(raw.short || String(raw.name || 'Jugador').split(' ').slice(-1)[0]),
+        team: raw.team ? teamCodeFromName(raw.team) : 'UNK', pos: POSITIONS.includes(raw.pos) ? raw.pos : 'MED',
+        price: Number(raw.price) || 5, points: Number(raw.points) || 0, avg, form,
+        health: HEALTH_INFO[raw.health] ? raw.health : 'ok', trend: Number(raw.trend) || 0, starter: !!raw.starter,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.5, ...(raw.last || {}) },
+      };
+    }
+
+    /* =====================================================
+       NOTIFICACIONES Y CIERRE DE MERCADO
+    ===================================================== */
+    function nextMarketClose(now = new Date()) {
+      const d = new Date(now);
+      d.setHours(21, 0, 0, 0);
+      const add = (5 - d.getDay() + 7) % 7; // viernes a las 21:00
+      d.setDate(d.getDate() + add);
+      if (d <= now) d.setDate(d.getDate() + 7);
+      return d;
+    }
+    const fmtCountdown = (ms) => {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+      const pad = (x) => String(x).padStart(2, '0');
+      return `${d > 0 ? d + 'd ' : ''}${pad(h)}:${pad(m)}:${pad(sec)}`;
+    };
+    function systemNotify(title, body) {
+      try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(title, { body, tag: title });
+          return true;
+        }
+      } catch (e) { /* algunos móviles solo permiten avisos con service worker */ }
+      return false;
+    }
+
+    /* =====================================================
+       PERSISTENCIA
     ===================================================== */
     function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
-      } catch (e) { return null; }
+      try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
     }
     function saveState(s) {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) { /* sin almacenamiento */ }
     }
+    function loadKey() {
+      try { return sessionStorage.getItem('fh-key') || localStorage.getItem('fh-key') || ''; } catch (e) { return ''; }
+    }
+    function storeKey(k, remember) {
+      try {
+        sessionStorage.setItem('fh-key', k);
+        if (remember) localStorage.setItem('fh-key', k); else localStorage.removeItem('fh-key');
+      } catch (e) { /* sin almacenamiento */ }
+    }
 
     /* =====================================================
-       COMPONENTES UI
+       COMPONENTES BÁSICOS
     ===================================================== */
     function Icon({ name, className = 'w-5 h-5' }) {
       const paths = {
@@ -508,12 +823,19 @@
         bolt: <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />,
         wallet: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M16 12h2M3 9h18" /></>,
         chart: <><path d="M4 19V5M4 19h16" /><path d="M8 15l3-4 3 2 4-6" /></>,
-        swap: <><path d="M7 7h11l-3-3M17 17H6l3 3" /></>,
+        swap: <path d="M7 7h11l-3-3M17 17H6l3 3" />,
         x: <path d="M6 6l12 12M18 6L6 18" />,
         shield: <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" />,
         target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" /></>,
         reset: <><path d="M4 4v6h6" /><path d="M20 12a8 8 0 01-14.9 4M4 10a8 8 0 0114.9-2" /></>,
         image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="M21 16l-5-5-9 9" /></>,
+        bell: <><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 003.4 0" /></>,
+        download: <><path d="M12 4v12m0 0l-4-4m4 4l4-4" /><path d="M4 18v1a1 1 0 001 1h14a1 1 0 001-1v-1" /></>,
+        trophy: <><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3" /></>,
+        play: <path d="M7 4l13 8-13 8V4z" />,
+        star: <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9L12 3z" />,
+        live: <><circle cx="12" cy="12" r="2" /><path d="M16.2 7.8a6 6 0 010 8.4M7.8 16.2a6 6 0 010-8.4M19 5a10 10 0 010 14M5 19A10 10 0 015 5" /></>,
+        eye: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>,
       };
       return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
@@ -521,37 +843,77 @@
         </svg>
       );
     }
-
     function HealthDot({ health }) {
-      const h = HEALTH_INFO[health];
-      return <span className={`inline-block w-2 h-2 rounded-full ${h.dot}`} title={h.label} />;
+      const h = HEALTH_INFO[health] || HEALTH_INFO.ok;
+      return <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${h.dot}`} title={h.label} />;
     }
-
     function TrendTag({ trend }) {
       const cls = trend > 0 ? 'text-neon bg-neon/10 border-neon/30' : trend < 0 ? 'text-danger bg-danger/10 border-danger/30' : 'text-slate-400 bg-white/5 border-white/10';
-      return <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded border ${cls}`}>{trend > 0 ? '▲' : trend < 0 ? '▼' : '■'} {Math.abs(trend)}%</span>;
+      return <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded border whitespace-nowrap ${cls}`}>{trend > 0 ? '▲' : trend < 0 ? '▼' : '■'} {Math.abs(trend)}%</span>;
     }
-
     function PosTag({ pos }) {
-      return <span className="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: POS_COLOR[pos], background: POS_COLOR[pos] + '1a', border: `1px solid ${POS_COLOR[pos]}55` }}>{pos}</span>;
+      return <span className="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0" style={{ color: POS_COLOR[pos], background: POS_COLOR[pos] + '1a', border: `1px solid ${POS_COLOR[pos]}55` }}>{pos}</span>;
     }
-
     function FormBars({ form }) {
       return (
-        <div className="flex items-end gap-0.5 h-5" title={`Últimas 5: ${form.join(', ')}`}>
+        <div className="flex items-end gap-0.5 h-5 shrink-0" title={`Últimas 5: ${form.join(', ')}`}>
           {form.map((v, i) => (
             <span key={i} className="w-1.5 rounded-sm" style={{ height: `${Math.max(12, Math.min(100, v * 9))}%`, background: v >= 7 ? '#39ff88' : v >= 4 ? '#ffc53d' : '#ff3b6b' }} />
           ))}
         </div>
       );
     }
-
-    /* ---------- NAVBAR ---------- */
-    function Navbar({ squadValue, budget, projTotal, onReset }) {
-      const [bumpKey, setBumpKey] = useState(0);
-      useEffect(() => { setBumpKey((k) => k + 1); }, [squadValue, budget, projTotal]);
+    function SectionTitle({ icon, children, tone = 'text-neon', right }) {
       return (
-        <header className="sticky top-0 z-40 border-b border-white/10 bg-void/80 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-white flex items-center gap-2">
+            <Icon name={icon} className={`w-5 h-5 ${tone}`} /> {children}
+          </h2>
+          {right}
+        </div>
+      );
+    }
+
+    /* Gráfica de precio: 7 días + previsión (línea discontinua) */
+    function PriceChart({ p, w = 120, h = 36, big = false }) {
+      const hist = histOf(p);
+      const forecast = r2(p.price * (1 + p.trend / 100));
+      const all = [...hist, forecast];
+      const min = Math.min(...all), max = Math.max(...all);
+      const pad = (max - min) * 0.15 || 0.2;
+      const lo = min - pad, hi = max + pad;
+      const padX = big ? 34 : 2, padY = big ? 14 : 3;
+      const X = (i) => padX + (i / (all.length - 1)) * (w - padX - 4);
+      const Y = (v) => padY + (1 - (v - lo) / (hi - lo)) * (h - padY * 2);
+      const pts = hist.map((v, i) => `${X(i)},${Y(v)}`).join(' ');
+      const up = forecast >= hist[hist.length - 1];
+      const color = p.trend > 0 ? '#39ff88' : p.trend < 0 ? '#ff3b6b' : '#94a3b8';
+      const days = ['-6d', '-5d', '-4d', '-3d', '-2d', 'Ayer', 'Hoy', 'Prev.'];
+      return (
+        <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={big ? h : undefined} className={big ? '' : 'w-full h-9'} preserveAspectRatio="none" role="img" aria-label={`Precio de ${p.name}`}>
+          {big && [lo + (hi - lo) * 0.25, lo + (hi - lo) * 0.75].map((v, i) => (
+            <g key={i}>
+              <line x1={padX} x2={w - 4} y1={Y(v)} y2={Y(v)} stroke="rgba(255,255,255,.07)" />
+              <text x={2} y={Y(v) + 3} fill="#64748b" fontSize="9" fontFamily="JetBrains Mono">{v.toFixed(1)}</text>
+            </g>
+          ))}
+          <polyline points={`${X(0)},${h} ${pts} ${X(hist.length - 1)},${h}`} fill={color} opacity="0.08" stroke="none" />
+          <polyline points={pts} fill="none" stroke={color} strokeWidth={big ? 2 : 1.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <line x1={X(hist.length - 1)} y1={Y(hist[hist.length - 1])} x2={X(all.length - 1)} y2={Y(forecast)} stroke={up ? '#39ff88' : '#ff3b6b'} strokeWidth={big ? 2 : 1.5} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+          <circle cx={X(all.length - 1)} cy={Y(forecast)} r={big ? 3.5 : 2} fill={up ? '#39ff88' : '#ff3b6b'} />
+          {big && all.map((v, i) => (
+            <text key={i} x={X(i)} y={h - 1} fill={i === all.length - 1 ? '#b026ff' : '#64748b'} fontSize="8.5" textAnchor="middle" fontFamily="JetBrains Mono">{days[i]}</text>
+          ))}
+        </svg>
+      );
+    }
+
+    /* =====================================================
+       NAVBAR, PESTAÑAS Y BANNER DE CIERRE
+    ===================================================== */
+    function Navbar({ squadValue, budget, projTotal, jornada, onReset, canInstall, onInstall, live }) {
+      return (
+        <header className="sticky top-0 z-40 border-b border-white/10 bg-void/85 backdrop-blur-md">
           <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-xl grid place-items-center bg-hack/20 glow-purple text-neon shrink-0">
@@ -563,15 +925,20 @@
                   <span className="text-hack glow-text-purple">HACKER</span>
                 </h1>
                 <p className="font-mono text-[10px] text-slate-500 tracking-widest mt-0.5 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-neon pulse-dot" /> IA ONLINE · JORNADA 11
+                  <span className={`w-1.5 h-1.5 rounded-full pulse-dot ${live ? 'bg-danger' : 'bg-neon'}`} /> {live ? 'MERCADO EN VIVO' : 'IA ONLINE'} · JORNADA {jornada}
                 </p>
               </div>
             </div>
             <div className="flex items-stretch gap-2 w-full sm:w-auto">
-              <Stat label="Valor Plantilla" value={fmtM(squadValue)} icon="chart" tone="neon" k={bumpKey} />
-              <Stat label="Presupuesto en Caja" value={fmtM(budget)} icon="wallet" tone={budget < 0 ? 'danger' : 'hack'} k={bumpKey} />
-              <Stat label="Proyección" value={`${projTotal.toFixed(1)} pts`} icon="target" tone="neon" k={bumpKey} className="hidden md:flex" />
-              <button onClick={onReset} title="Reiniciar datos de prueba" className="px-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-neon hover:border-neon/50 transition">
+              <Stat label="Valor Plantilla" value={fmtM(squadValue)} icon="chart" tone="neon" />
+              <Stat label="Presupuesto en Caja" value={fmtM(budget)} icon="wallet" tone={budget < 0 ? 'danger' : 'hack'} />
+              <Stat label="Proyección" value={`${projTotal.toFixed(1)} pts`} icon="target" tone="neon" className="hidden md:flex" />
+              {canInstall && (
+                <button onClick={onInstall} title="Instalar como app" className="px-2.5 rounded-xl btn-hack">
+                  <Icon name="download" className="w-4 h-4" />
+                </button>
+              )}
+              <button onClick={onReset} title="Reiniciar datos de prueba" className="px-2.5 rounded-xl btn-ghost">
                 <Icon name="reset" className="w-4 h-4" />
               </button>
             </div>
@@ -579,52 +946,95 @@
         </header>
       );
     }
-
-    function Stat({ label, value, icon, tone, k, className = '' }) {
+    function Stat({ label, value, icon, tone, className = '' }) {
       const color = tone === 'neon' ? 'text-neon' : tone === 'danger' ? 'text-danger' : 'text-hack';
       return (
-        <div className={`flex-1 sm:flex-none flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[.03] border border-white/10 ${className}`}>
+        <div className={`flex-1 sm:flex-none flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[.03] border border-white/10 min-w-0 ${className}`}>
           <Icon name={icon} className={`w-4 h-4 ${color} shrink-0`} />
-          <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold whitespace-nowrap">{label}</div>
-            <div key={k} className={`font-display font-extrabold text-sm sm:text-base ${color} bump`}>{value}</div>
+          <div className="leading-tight min-w-0">
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold truncate">{label}</div>
+            <div key={value} className={`font-display font-extrabold text-sm sm:text-base ${color} bump whitespace-nowrap`}>{value}</div>
           </div>
         </div>
       );
     }
 
-    /* ---------- ZONA DE CARGA + OCR ---------- */
-    const OCR_SCRIPTS = {
-      team: [
-        '> Cargando modelo de visión «HackerVision-v4»…',
-        '> Preprocesando imagen: contraste +32%, desenfoque −0.8',
-        '> Detectando bloques de texto… 47 regiones',
-        '> Reconociendo dorsales y nombres… 14 jugadores',
-        '> Cruzando con base de datos de LaLiga… 100% match',
-        '> Leyendo precios, puntos y estado médico…',
-        '> Formación detectada: 4-3-3 ✔',
-      ],
-      market: [
-        '> Cargando modelo de visión «HackerVision-v4»…',
-        '> Segmentando tarjetas del mercado… 5 detectadas',
-        '> OCR de precios y pujas mínimas…',
-        '> Analizando velocidad de subida de precio (Δ 24h)…',
-        '> Detectando rachas ocultas en las últimas 5 jornadas…',
-        '> Inyectando oportunidades en el mercado ✔',
-      ],
-    };
+    const TABS = [
+      { id: 'hacker', label: 'Hacker', icon: 'bolt' },
+      { id: 'mercado', label: 'Mercado', icon: 'chart' },
+      { id: 'liga', label: 'Liga', icon: 'trophy' },
+      { id: 'jornada', label: 'Jornada', icon: 'play' },
+    ];
+    function TabBar({ tab, setTab, alerts }) {
+      return (
+        <nav className="max-w-7xl mx-auto px-4 pt-4">
+          <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-black/40 border border-white/10">
+            {TABS.map((t) => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`relative flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${tab === t.id ? 'bg-hack/25 text-white glow-purple' : 'text-slate-400 hover:text-white'}`}>
+                <Icon name={t.icon} className="w-4 h-4" /> <span>{t.label}</span>
+                {alerts[t.id] > 0 && <span className="absolute top-1 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-danger text-[10px] text-white grid place-items-center">{alerts[t.id]}</span>}
+              </button>
+            ))}
+          </div>
+        </nav>
+      );
+    }
 
-    function UploadZone({ onAnalyzed }) {
+    function MarketCloseBanner({ jornada, notifyOn, onToggleNotify, onTest }) {
+      const [now, setNow] = useState(Date.now());
+      useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+      const close = nextMarketClose(new Date(now));
+      const left = close - now;
+      const urgent = left < 3600 * 1000 * 3;
+      return (
+        <div className="max-w-7xl mx-auto px-4 pt-4">
+          <div className={`flex flex-wrap items-center gap-3 justify-between rounded-2xl border px-4 py-2.5 ${urgent ? 'border-danger/50 bg-danger/10' : 'border-hack/30 bg-hack/[.06]'}`}>
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`w-2 h-2 rounded-full ${urgent ? 'bg-danger' : 'bg-hack'} pulse-dot`} />
+              <span className="text-slate-300">Cierre de mercado J{jornada}:</span>
+              <span className={`font-mono font-semibold ${urgent ? 'text-danger' : 'text-hack'}`}>{fmtCountdown(left)}</span>
+              <span className="hidden sm:inline text-xs text-slate-500">({close.toLocaleDateString('es-ES', { weekday: 'long' })} {close.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })})</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={onToggleNotify} className={`text-xs rounded-lg px-3 py-1.5 flex items-center gap-1.5 ${notifyOn ? 'btn-neon' : 'btn-ghost'}`}>
+                <Icon name="bell" className="w-3.5 h-3.5" /> {notifyOn ? 'Avisos activos' : 'Activar avisos'}
+              </button>
+              {notifyOn && <button onClick={onTest} className="text-xs rounded-lg px-3 py-1.5 btn-ghost">Probar</button>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* =====================================================
+       ZONA DE CARGA + OCR (DEMO / TESSERACT / CLAUDE)
+    ===================================================== */
+    const OCR_SCRIPTS = {
+      team: ['> Cargando modelo de visión «HackerVision-v4»…', '> Preprocesando imagen: contraste +32%, desenfoque −0.8', '> Detectando bloques de texto… 47 regiones', '> Reconociendo dorsales y nombres… 14 jugadores', '> Cruzando con base de datos de LaLiga… 100% match', '> Leyendo precios, puntos y estado médico…', '> Alineación óptima calculada ✔'],
+      market: ['> Cargando modelo de visión «HackerVision-v4»…', '> Segmentando tarjetas del mercado… 5 detectadas', '> OCR de precios y pujas mínimas…', '> Analizando velocidad de subida de precio (Δ 24h)…', '> Detectando rachas ocultas en las últimas 5 jornadas…', '> Inyectando oportunidades en el mercado ✔'],
+    };
+    const ENGINES = [
+      { id: 'demo', label: 'Demo', desc: 'Simulación con captura de ejemplo' },
+      { id: 'tesseract', label: 'OCR real', desc: 'Tesseract.js en tu navegador, gratis' },
+      { id: 'claude', label: 'Claude Vision', desc: 'IA de Anthropic, necesita API key' },
+    ];
+
+    function UploadZone({ onAnalyzed, toast }) {
       const [mode, setMode] = useState('team');
+      const [engine, setEngine] = useState(() => { try { return localStorage.getItem('fh-engine') || 'demo'; } catch (e) { return 'demo'; } });
       const [preview, setPreview] = useState({ team: null, market: null });
       const [drag, setDrag] = useState(false);
       const [scanning, setScanning] = useState(false);
       const [log, setLog] = useState([]);
       const [progress, setProgress] = useState(0);
+      const [apiKey, setApiKey] = useState(loadKey);
+      const [remember, setRemember] = useState(() => { try { return !!localStorage.getItem('fh-key'); } catch (e) { return false; } });
       const inputRef = useRef(null);
       const timers = useRef([]);
 
       useEffect(() => () => timers.current.forEach(clearTimeout), []);
+      useEffect(() => { try { localStorage.setItem('fh-engine', engine); } catch (e) { /* sin almacenamiento */ } }, [engine]);
 
       const readFile = (file) => {
         if (!file || !file.type.startsWith('image/')) return;
@@ -632,26 +1042,71 @@
         reader.onload = (e) => setPreview((p) => ({ ...p, [mode]: e.target.result }));
         reader.readAsDataURL(file);
       };
+      const addLog = (l) => setLog((x) => [...x, l]);
+
+      const runDemo = () => {
+        const script = OCR_SCRIPTS[mode];
+        script.forEach((line, i) => {
+          timers.current.push(setTimeout(() => { addLog(line); setProgress(Math.round(((i + 1) / script.length) * 100)); }, 380 * (i + 1)));
+        });
+        timers.current.push(setTimeout(() => { setScanning(false); onAnalyzed(mode, null); }, 380 * (script.length + 1) + 200));
+      };
+
+      const runTesseract = async (img) => {
+        try {
+          addLog('> Cargando Tesseract.js (primera vez ~10 MB)…');
+          await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+          addLog('> Descargando idioma español…');
+          const worker = await window.Tesseract.createWorker('spa', 1, {
+            logger: (m) => { if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100)); },
+          });
+          addLog('> Leyendo texto de la captura…');
+          const { data } = await worker.recognize(img);
+          await worker.terminate();
+          const words = data.text.split(/\s+/).filter(Boolean).length;
+          addLog(`> ${words} palabras leídas. Buscando jugadores de LaLiga…`);
+          const players = matchPlayersInText(data.text);
+          addLog(`> ${players.length} jugadores reconocidos${players.length ? ': ' + players.slice(0, 6).map((p) => p.short).join(', ') + (players.length > 6 ? '…' : '') : ''}`);
+          if (mode === 'team' && players.length < 5) throw new Error(`Solo reconocí ${players.length} jugadores. Prueba con una captura más nítida o con Claude Vision.`);
+          if (!players.length) throw new Error('No reconocí ningún jugador. Prueba con Claude Vision.');
+          addLog('> Datos aplicados ✔');
+          setProgress(100);
+          onAnalyzed(mode, { players, budget: 0, source: 'OCR' });
+        } catch (e) {
+          addLog('✖ ' + e.message); toast(e.message, 'error');
+        } finally { setScanning(false); }
+      };
+
+      const runClaude = async (img) => {
+        if (!apiKey.trim()) { setScanning(false); toast('Escribe tu API key de Anthropic', 'error'); return; }
+        storeKey(apiKey.trim(), remember);
+        let p = 5;
+        const tick = setInterval(() => { p = Math.min(92, p + 4); setProgress(p); }, 500);
+        try {
+          addLog('> Comprimiendo imagen y enviándola a Claude…');
+          addLog('> Claude está leyendo nombres, posiciones y precios…');
+          const { players, budget } = await claudeVisionExtract(apiKey.trim(), img, mode);
+          addLog(`> ${players.length} jugadores extraídos${players.length ? ': ' + players.slice(0, 6).map((x) => x.short).join(', ') + (players.length > 6 ? '…' : '') : ''}`);
+          if (budget > 0) addLog(`> Presupuesto detectado: ${fmtM(budget)}`);
+          if (!players.length) throw new Error('Claude no encontró jugadores en la imagen.');
+          setProgress(100);
+          addLog('> Datos aplicados ✔');
+          onAnalyzed(mode, { players, budget, source: 'Claude' });
+        } catch (e) {
+          addLog('✖ ' + e.message); toast(e.message, 'error');
+        } finally { clearInterval(tick); setScanning(false); }
+      };
 
       const analyze = () => {
-        const script = OCR_SCRIPTS[mode];
-        setScanning(true);
-        setLog([]);
-        setProgress(0);
-        script.forEach((line, i) => {
-          timers.current.push(setTimeout(() => {
-            setLog((l) => [...l, line]);
-            setProgress(Math.round(((i + 1) / script.length) * 100));
-          }, 380 * (i + 1)));
-        });
-        timers.current.push(setTimeout(() => {
-          setScanning(false);
-          onAnalyzed(mode);
-        }, 380 * (script.length + 1) + 200));
+        const img = preview[mode];
+        if (engine !== 'demo' && !img) { toast('Sube primero una captura', 'error'); return; }
+        setScanning(true); setLog([]); setProgress(0);
+        if (engine === 'demo') runDemo();
+        else if (engine === 'tesseract') runTesseract(img);
+        else runClaude(img);
       };
 
       const current = preview[mode];
-
       return (
         <section className="card p-4 sm:p-5 glow-green relative overflow-hidden">
           <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-neon/10 blur-3xl pointer-events-none" />
@@ -665,12 +1120,33 @@
             <div className="grid grid-cols-2 p-1 rounded-xl bg-black/40 border border-white/10 text-xs font-semibold">
               {[['team', 'Imagen de Equipo'], ['market', 'Imagen de Mercado']].map(([k, l]) => (
                 <button key={k} onClick={() => !scanning && setMode(k)}
-                  className={`px-3 py-2 rounded-lg transition ${mode === k ? 'bg-neon text-void shadow-[0_0_14px_rgba(57,255,136,.5)]' : 'text-slate-400 hover:text-white'}`}>
-                  {l}
-                </button>
+                  className={`px-3 py-2 rounded-lg transition ${mode === k ? 'bg-neon text-void shadow-[0_0_14px_rgba(57,255,136,.5)]' : 'text-slate-400 hover:text-white'}`}>{l}</button>
               ))}
             </div>
           </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-4 relative">
+            {ENGINES.map((e) => (
+              <button key={e.id} disabled={scanning} onClick={() => setEngine(e.id)}
+                className={`text-left rounded-xl border px-2.5 py-2 transition ${engine === e.id ? 'border-hack bg-hack/15 glow-purple' : 'border-white/10 bg-black/30 hover:border-white/25'}`}>
+                <div className="text-xs font-bold text-white">{e.label}</div>
+                <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{e.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {engine === 'claude' && (
+            <div className="mb-4 rounded-xl border border-hack/30 bg-hack/[.05] p-3 relative">
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">API key de Anthropic</label>
+              <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-ant-…" className="field mt-1 font-mono" autoComplete="off" />
+              <label className="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> Recordar en este dispositivo
+              </label>
+              <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                La key se envía directamente desde tu navegador a api.anthropic.com y solo se guarda aquí. Úsala solo en tu propio dispositivo. Cada análisis cuesta unos céntimos de tu cuenta.
+              </p>
+            </div>
+          )}
 
           <div className="grid md:grid-cols-[1.1fr_1fr] gap-4 relative">
             <div
@@ -678,8 +1154,7 @@
               onDragLeave={() => setDrag(false)}
               onDrop={(e) => { e.preventDefault(); setDrag(false); readFile(e.dataTransfer.files[0]); }}
               onClick={() => !scanning && inputRef.current?.click()}
-              className={`scan-wrap cursor-pointer rounded-2xl border-2 border-dashed border-white/15 hover:border-neon/60 transition min-h-[180px] grid place-items-center text-center bg-black/30 ${drag ? 'dropzone-active' : ''}`}
-            >
+              className={`scan-wrap cursor-pointer rounded-2xl border-2 border-dashed border-white/15 hover:border-neon/60 transition min-h-[180px] grid place-items-center text-center bg-black/30 ${drag ? 'dropzone-active' : ''}`}>
               <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files[0])} />
               {current ? (
                 <img src={current} alt="Captura subida" className="absolute inset-0 w-full h-full object-cover opacity-70" />
@@ -690,29 +1165,24 @@
                   </div>
                   <p className="font-semibold text-white">{mode === 'team' ? 'Subir Imagen de Equipo' : 'Subir Imagen de Mercado'}</p>
                   <p className="text-xs text-slate-400 mt-1">Arrastra una captura o toca para elegir (PNG/JPG)</p>
-                  <p className="text-[11px] text-slate-500 mt-2 font-mono">Sin imagen → la IA usa una captura de demo</p>
+                  {engine === 'demo' && <p className="text-[11px] text-slate-500 mt-2 font-mono">Modo demo: sin imagen usa una captura de ejemplo</p>}
                 </div>
               )}
               {scanning && (<><div className="scan-grid" /><div className="scan-line" /></>)}
-              {current && !scanning && (
-                <span className="absolute bottom-2 left-2 text-[11px] font-mono bg-black/70 px-2 py-1 rounded text-neon">Imagen lista ✔ · toca para cambiar</span>
-              )}
+              {current && !scanning && <span className="absolute bottom-2 left-2 text-[11px] font-mono bg-black/70 px-2 py-1 rounded text-neon">Imagen lista ✔ · toca para cambiar</span>}
             </div>
 
             <div className="flex flex-col gap-3">
               <div className="flex-1 rounded-2xl bg-black/60 border border-neon/20 p-3 font-mono text-[11px] sm:text-xs text-neon/90 min-h-[140px] max-h-[200px] overflow-auto">
-                {log.length === 0 && !scanning && (
-                  <p className="text-slate-500">$ hacker-vision --mode={mode} <span className="blink">▌</span></p>
-                )}
-                {log.map((l, i) => <p key={i} className="fade-in leading-relaxed">{l}</p>)}
+                {log.length === 0 && !scanning && <p className="text-slate-500">$ hacker-vision --mode={mode} --engine={engine} <span className="blink">▌</span></p>}
+                {log.map((l, i) => <p key={i} className={`fade-in leading-relaxed ${l.startsWith('✖') ? 'text-danger' : ''}`}>{l}</p>)}
                 {scanning && <p className="blink">▌</p>}
               </div>
               <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-neon to-hack transition-all duration-300" style={{ width: `${progress}%` }} />
               </div>
               <button onClick={analyze} disabled={scanning} className="btn-neon rounded-xl py-3 px-4 flex items-center justify-center gap-2 text-sm">
-                <Icon name="scan" className="w-4 h-4" />
-                {scanning ? `Analizando… ${progress}%` : 'Analizar con IA'}
+                <Icon name="scan" className="w-4 h-4" /> {scanning ? `Analizando… ${progress}%` : 'Analizar con IA'}
               </button>
             </div>
           </div>
@@ -720,14 +1190,17 @@
       );
     }
 
-    /* ---------- FEED DEL HACKER ---------- */
-    function HackerFeed({ hacks, onExecute, squadMap, marketMap }) {
+    /* =====================================================
+       FEED DEL HACKER Y RADAR
+    ===================================================== */
+    function HackerFeed({ hacks, onExecute, lookup }) {
       const style = {
         critical: { emoji: '🔴', label: 'ALERTA CRÍTICA', cls: 'border-danger/60 bg-danger/5', tag: 'text-danger' },
         high: { emoji: '🟢', label: 'HACK SUGERIDO', cls: 'border-neon/50 bg-neon/[.04]', tag: 'text-neon' },
         mid: { emoji: '🟢', label: 'HACK SUGERIDO', cls: 'border-hack/50 bg-hack/[.06]', tag: 'text-neon' },
         info: { emoji: '🟡', label: 'MANTÉN Y BLINDA', cls: 'border-warn/40 bg-warn/[.04]', tag: 'text-warn' },
       };
+      const actionLabel = { swap: 'Ejecutar hack ⚡', bench: 'Alinear suplente ⚡', fill: 'Fichar y alinear ⚡', captain: 'Poner brazalete ©' };
       return (
         <section className="card-purple p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
@@ -736,22 +1209,18 @@
             </h2>
             <span className="font-mono text-[11px] text-hack/80 border border-hack/40 rounded-full px-2 py-0.5">{hacks.length} órdenes</span>
           </div>
-          <div className="space-y-3 max-h-[640px] overflow-auto pr-1">
-            {hacks.length === 0 && (
-              <p className="text-sm text-slate-400 font-mono">✔ Tu once está optimizado. La IA sigue vigilando el mercado…</p>
-            )}
+          <div className="space-y-3 max-h-[680px] overflow-auto pr-1">
+            {hacks.length === 0 && <p className="text-sm text-slate-400 font-mono">✔ Tu once está optimizado. La IA sigue vigilando el mercado…</p>}
             {hacks.map((h) => {
               const s = style[h.severity];
-              const out = squadMap[h.outId];
-              const inn = h.inId ? (marketMap[h.inId] || squadMap[h.inId]) : null;
+              const out = h.outId ? lookup[h.outId] : null;
+              const inn = h.inId ? lookup[h.inId] : null;
               return (
                 <article key={h.id} className={`fade-in rounded-2xl border p-3.5 ${s.cls}`}>
                   <div className={`font-mono text-[11px] font-semibold tracking-wider ${s.tag}`}>{s.emoji} {s.label}</div>
                   <h3 className="font-bold text-white mt-1 leading-snug">{h.title}</h3>
-                  <p className="text-sm text-slate-300 mt-1.5 leading-relaxed">
-                    <span className="text-hack font-semibold">¿Por qué? </span>{h.why}
-                  </p>
-                  {out && inn && (
+                  <p className="text-sm text-slate-300 mt-1.5 leading-relaxed"><span className="text-hack font-semibold">¿Por qué? </span>{h.why}</p>
+                  {out && inn && h.type !== 'captain' && (
                     <div className="mt-3 flex items-center gap-2 text-xs">
                       <MiniPlayer p={out} tone="out" />
                       <Icon name="swap" className="w-4 h-4 text-hack shrink-0" />
@@ -760,9 +1229,7 @@
                   )}
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <span className="font-mono text-[11px] text-neon">{h.impact}</span>
-                    {(h.type === 'swap' || h.type === 'bench') && (
-                      <button onClick={() => onExecute(h)} className="btn-hack text-xs rounded-lg px-3 py-1.5">Ejecutar hack ⚡</button>
-                    )}
+                    {actionLabel[h.type] && <button onClick={() => onExecute(h)} className="btn-hack text-xs rounded-lg px-3 py-1.5">{actionLabel[h.type]}</button>}
                   </div>
                 </article>
               );
@@ -771,20 +1238,15 @@
         </section>
       );
     }
-
     function MiniPlayer({ p, tone }) {
       return (
         <div className={`flex-1 min-w-0 rounded-lg px-2 py-1.5 border ${tone === 'out' ? 'border-danger/40 bg-danger/5' : 'border-neon/40 bg-neon/5'}`}>
-          <div className="flex items-center gap-1.5">
-            <HealthDot health={p.health} />
-            <span className="font-semibold text-white truncate">{p.short}</span>
-          </div>
+          <div className="flex items-center gap-1.5"><HealthDot health={p.health} /><span className="font-semibold text-white truncate">{p.short}</span></div>
           <div className="font-mono text-[10px] text-slate-400">{fmtM(p.price)} · {projection(p)} pts</div>
         </div>
       );
     }
 
-    /* ---------- TARJETAS COMPRAR / VENDER / MANTENER ---------- */
     function RecommendationCards({ cards }) {
       const cols = [
         { key: 'buy', title: 'COMPRAR', cls: 'text-neon', border: 'border-neon/40', bg: 'bg-neon/[.04]' },
@@ -793,10 +1255,8 @@
       ];
       return (
         <section className="card p-4 sm:p-5">
-          <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-white mb-4 flex items-center gap-2">
-            <Icon name="chart" className="w-5 h-5 text-neon" /> RADAR DE MERCADO
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <SectionTitle icon="chart">RADAR DE MERCADO</SectionTitle>
+          <div className="grid gap-3 md:grid-cols-3">
             {cols.map((c) => (
               <div key={c.key} className={`rounded-2xl border ${c.border} ${c.bg} p-3`}>
                 <div className="flex items-center justify-between mb-2">
@@ -819,7 +1279,7 @@
                         <span className="text-[11px] text-slate-400 truncate">{reason}</span>
                         <FormBars form={p.form} />
                       </div>
-                      <div className="mt-1 font-mono text-[10px] text-slate-500">{TEAMS[p.team].name} · {fmtM(p.price)} · {projection(p)} pts proy.</div>
+                      <div className="mt-1 font-mono text-[10px] text-slate-500">{teamOf(p.team).name} · {fmtM(p.price)} · {projection(p)} pts proy.</div>
                     </li>
                   ))}
                 </ul>
@@ -830,23 +1290,32 @@
       );
     }
 
-    /* ---------- CAMPO DE FÚTBOL ---------- */
-    function Pitch({ squad, selectedId, onSelect, projTotal }) {
+    /* =====================================================
+       CAMPO (FORMACIÓN + CAPITÁN)
+    ===================================================== */
+    function Pitch({ squad, formation, setFormation, captainId, onSelect, onEmpty, projTotal, onAuto }) {
       const starters = squad.filter((p) => p.starter);
       const rows = ['DEL', 'MED', 'DEF', 'POR'];
-      const rowY = { DEL: 16, MED: 41, DEF: 66, POR: 88 };
+      const rowY = { DEL: 15, MED: 40, DEF: 65, POR: 88 };
+      const need = FORMATIONS[formation];
       const bench = squad.filter((p) => !p.starter);
-
       return (
         <section className="card p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
             <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-white flex items-center gap-2">
-              <Icon name="target" className="w-5 h-5 text-neon" /> TU ONCE · 4-3-3
+              <Icon name="target" className="w-5 h-5 text-neon" /> TU ONCE
             </h2>
             <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Proyección jornada</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Proyección (capitán x2)</div>
               <div key={projTotal} className="font-display font-black text-neon glow-text-green text-lg bump">{projTotal.toFixed(1)} pts</div>
             </div>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-3">
+            {Object.keys(FORMATIONS).map((f) => (
+              <button key={f} onClick={() => setFormation(f)}
+                className={`shrink-0 font-mono text-xs px-3 py-1.5 rounded-lg border transition ${formation === f ? 'border-neon bg-neon/15 text-neon' : 'border-white/10 text-slate-400 hover:text-white'}`}>{f}</button>
+            ))}
+            <button onClick={onAuto} className="shrink-0 text-xs px-3 py-1.5 rounded-lg btn-hack">Auto-alinear IA</button>
           </div>
 
           <div className="pitch w-full aspect-[3/4] sm:aspect-[4/5] max-h-[640px] mx-auto">
@@ -864,27 +1333,34 @@
               <circle className="spot" cx="34" cy="92" r="0.5" />
               <path d="M26.7 86.5 A9.15 9.15 0 0 1 41.3 86.5" />
             </svg>
-
             {rows.map((pos) => {
               const line = starters.filter((p) => p.pos === pos);
-              return line.map((p, i) => {
-                const x = ((i + 1) / (line.length + 1)) * 100;
+              const slots = [...line, ...Array(Math.max(0, need[pos] - line.length)).fill(null)];
+              return slots.map((p, i) => {
+                const x = ((i + 1) / (slots.length + 1)) * 100;
+                const style = { left: `${x}%`, top: `${rowY[pos]}%`, transform: 'translate(-50%, -50%)' };
+                if (!p) {
+                  return (
+                    <button key={`empty-${pos}-${i}`} onClick={() => onEmpty(pos)} className="player-chip absolute flex flex-col items-center gap-1" style={style}>
+                      <div className="empty-slot">+</div>
+                      <div className="bg-black/75 border border-neon/40 rounded-md px-1.5 py-0.5 text-[10px] text-neon font-semibold">Fichar {pos}</div>
+                    </button>
+                  );
+                }
                 const proj = projection(p);
+                const cap = p.id === captainId;
                 return (
-                  <button key={p.id} onClick={() => onSelect(p.id)}
-                    className={`player-chip absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 ${selectedId === p.id ? 'selected' : ''}`}
-                    style={{ left: `${x}%`, top: `${rowY[pos]}%` }}>
+                  <button key={p.id} onClick={() => onSelect(p.id)} className="player-chip absolute flex flex-col items-center gap-1" style={style}>
                     <div className="relative">
-                      <div className="shirt" style={{ background: TEAMS[p.team].color }}>{p.team}</div>
+                      <div className="shirt" style={{ background: teamOf(p.team).color }}>{String(p.team).slice(0, 3)}</div>
+                      {cap && <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full grid place-items-center text-[10px] font-black bg-hack text-white shadow-[0_0_10px_#b026ff]">C</span>}
                       {p.health !== 'ok' && (
-                        <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full grid place-items-center text-[9px] font-black text-void ${p.health === 'duda' ? 'bg-warn' : 'bg-danger'}`}>
-                          {p.health === 'duda' ? '?' : '+'}
-                        </span>
+                        <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full grid place-items-center text-[9px] font-black text-void ${p.health === 'duda' ? 'bg-warn' : 'bg-danger'}`}>{p.health === 'duda' ? '?' : '+'}</span>
                       )}
                     </div>
-                    <div className="bg-black/75 border border-white/10 rounded-md px-1.5 py-0.5 text-center leading-tight max-w-[80px]">
+                    <div className="bg-black/75 border border-white/10 rounded-md px-1.5 py-0.5 text-center leading-tight max-w-[78px]">
                       <div className="text-[10px] sm:text-[11px] font-semibold text-white truncate">{p.short}</div>
-                      <div className={`font-mono text-[10px] ${proj >= 6 ? 'text-neon' : proj >= 3.5 ? 'text-warn' : 'text-danger'}`}>{proj.toFixed(1)} pts</div>
+                      <div className={`font-mono text-[10px] ${proj >= 6 ? 'text-neon' : proj >= 3.5 ? 'text-warn' : 'text-danger'}`}>{cap ? `${(proj * 2).toFixed(1)}` : proj.toFixed(1)} pts</div>
                     </div>
                   </button>
                 );
@@ -896,82 +1372,117 @@
             <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2">Banquillo</div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {bench.map((p) => (
-                <div key={p.id} className="shrink-0 rounded-xl bg-black/40 border border-white/10 px-3 py-2 min-w-[130px]">
+                <button key={p.id} onClick={() => onSelect(p.id)} className="shrink-0 text-left rounded-xl bg-black/40 border border-white/10 hover:border-neon/40 px-3 py-2 min-w-[130px]">
                   <div className="flex items-center gap-1.5"><PosTag pos={p.pos} /><span className="text-sm font-semibold text-white truncate">{p.short}</span></div>
                   <div className="font-mono text-[10px] text-slate-400 mt-0.5">{fmtM(p.price)} · {projection(p)} pts</div>
-                </div>
+                </button>
               ))}
               {bench.length === 0 && <span className="text-xs text-slate-500">Sin suplentes.</span>}
             </div>
           </div>
-          <p className="text-[11px] text-slate-500 mt-3 font-mono">💡 Toca un titular para ver reemplazos recomendados.</p>
+          <p className="text-[11px] text-slate-500 mt-3 font-mono">💡 Toca un jugador para cambiarlo, venderlo o darle el brazalete (puntúa x2).</p>
         </section>
       );
     }
 
-    /* ---------- PANEL DE REEMPLAZO ---------- */
-    function ReplaceSheet({ player, squad, market, budget, onClose, onBuy, onBenchSwap }) {
+    /* =====================================================
+       PANEL DE JUGADOR / FICHAJE
+    ===================================================== */
+    function PlayerSheet({ sheet, squad, market, budget, captainId, onClose, actions }) {
+      if (!sheet) return null;
+      if (sheet.mode === 'add') {
+        const options = market.filter((m) => m.pos === sheet.pos).sort((a, b) => projection(b) - projection(a));
+        return (
+          <Sheet onClose={onClose}>
+            <h3 className="font-display font-bold text-lg text-white">Fichar {POS_LABEL[sheet.pos].toLowerCase()}</h3>
+            <p className="text-xs text-slate-400">Caja disponible: {fmtM(budget)}. El fichaje entra directo al once.</p>
+            <div className="space-y-2 mt-4">
+              {options.length === 0 && <p className="text-sm text-slate-500">No hay jugadores de esa posición en el mercado.</p>}
+              {options.map((m) => (
+                <OptionRow key={m.id} p={m} delta={projection(m)} disabled={m.price > budget || m.health !== 'ok'}
+                  note={m.price > budget ? `Te faltan ${fmtM(m.price - budget)}` : m.health !== 'ok' ? HEALTH_INFO[m.health].label : null}
+                  label="Fichar" onClick={() => actions.addPlayer(m.id, true)} />
+              ))}
+            </div>
+          </Sheet>
+        );
+      }
+      const player = squad.find((p) => p.id === sheet.id);
       if (!player) return null;
       const base = projection(player);
       const n = nextOf(player);
-      const options = market
-        .filter((m) => m.pos === player.pos)
+      const options = market.filter((m) => m.pos === player.pos)
         .map((m) => ({ m, delta: projection(m) - base, affordable: m.price <= budget + player.price }))
         .sort((a, b) => b.delta - a.delta);
-      const benchOpts = squad.filter((b) => !b.starter && b.pos === player.pos);
+      const swapOpts = squad.filter((b) => b.starter !== player.starter && b.pos === player.pos);
+      const isCap = captainId === player.id;
+      return (
+        <Sheet onClose={onClose}>
+          <div className="flex items-center gap-2 flex-wrap"><PosTag pos={player.pos} /><HealthDot health={player.health} /><span className={`text-xs ${HEALTH_INFO[player.health].cls}`}>{HEALTH_INFO[player.health].label}</span>{player.starter ? <span className="text-[10px] font-mono text-neon">TITULAR</span> : <span className="text-[10px] font-mono text-slate-400">SUPLENTE</span>}</div>
+          <h3 className="font-display font-bold text-lg text-white mt-1 pr-8">{player.name}{isCap && <span className="text-hack"> ©</span>}</h3>
+          <p className="text-xs text-slate-400">{teamOf(player.team).name} · {n.home ? 'vs' : '@'} {n.rival} (dif. {n.diff}/5) · {fmtM(player.price)}</p>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <Kpi label="Proyección" value={`${base} pts`} />
+            <Kpi label="Media" value={player.avg.toFixed(1)} />
+            <Kpi label="Tendencia" value={`${player.trend > 0 ? '+' : ''}${player.trend}%`} tone={player.trend >= 0 ? 'text-neon' : 'text-danger'} />
+          </div>
+          <div className="mt-3 rounded-xl bg-black/40 border border-white/10 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold px-1">Precio 7 días + previsión</div>
+            <PriceChart p={player} w={320} h={110} big />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button disabled={!player.starter || isCap} onClick={() => actions.setCaptain(player.id)} className="btn-hack rounded-xl py-2 text-xs">{isCap ? 'Ya es capitán ©' : 'Hacer capitán ©'}</button>
+            <button onClick={() => actions.sellPlayer(player.id)} className="rounded-xl py-2 text-xs border border-danger/50 text-danger hover:bg-danger/10">Vender por {fmtM(player.price)}</button>
+          </div>
 
+          {swapOpts.length > 0 && (
+            <>
+              <h4 className="mt-5 mb-2 text-xs uppercase tracking-wider text-slate-500 font-semibold">{player.starter ? 'Desde tu banquillo (gratis)' : 'Meter en el once en lugar de'}</h4>
+              <div className="space-y-2">
+                {swapOpts.map((b) => {
+                  const d = player.starter ? projection(b) - base : base - projection(b);
+                  return <OptionRow key={b.id} p={b} delta={d} label={player.starter ? 'Alinear' : 'Cambiar'}
+                    onClick={() => player.starter ? actions.benchSwap(player.id, b.id) : actions.benchSwap(b.id, player.id)} />;
+                })}
+              </div>
+            </>
+          )}
+
+          <h4 className="mt-5 mb-2 text-xs uppercase tracking-wider text-slate-500 font-semibold">Reemplazos recomendados del mercado</h4>
+          <div className="space-y-2">
+            {options.length === 0 && <p className="text-sm text-slate-500">No hay {POS_LABEL[player.pos].toLowerCase()}s en el mercado.</p>}
+            {options.map(({ m, delta, affordable }) => (
+              <OptionRow key={m.id} p={m} delta={delta} disabled={!affordable || m.health !== 'ok'}
+                note={!affordable ? `Te faltan ${fmtM(m.price - budget - player.price)}` : m.health !== 'ok' ? HEALTH_INFO[m.health].label : `Coste neto ${fmtM(m.price - player.price)}`}
+                label="Fichar" onClick={() => actions.buyReplacement(player.id, m.id)} />
+            ))}
+          </div>
+        </Sheet>
+      );
+    }
+    function Sheet({ children, onClose }) {
+      useEffect(() => {
+        const k = (e) => e.key === 'Escape' && onClose();
+        window.addEventListener('keydown', k);
+        return () => window.removeEventListener('keydown', k);
+      }, [onClose]);
       return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sheet-backdrop" onClick={onClose}>
-          <div className="card w-full sm:max-w-lg max-h-[88vh] overflow-auto rounded-b-none sm:rounded-b-[18px] p-4 sm:p-5 fade-in glow-purple" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2"><PosTag pos={player.pos} /><HealthDot health={player.health} /><span className={`text-xs ${HEALTH_INFO[player.health].cls}`}>{HEALTH_INFO[player.health].label}</span></div>
-                <h3 className="font-display font-bold text-lg text-white mt-1">{player.name}</h3>
-                <p className="text-xs text-slate-400">{TEAMS[player.team].name} · {n.home ? 'vs' : '@'} {n.rival} (dif. {n.diff}/5) · {fmtM(player.price)}</p>
-              </div>
-              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400"><Icon name="x" /></button>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <Kpi label="Proyección" value={`${base} pts`} />
-              <Kpi label="Media" value={player.avg.toFixed(1)} />
-              <Kpi label="Tendencia" value={`${sign(player.trend)}%`} tone={player.trend >= 0 ? 'text-neon' : 'text-danger'} />
-            </div>
-
-            {benchOpts.length > 0 && (
-              <>
-                <h4 className="mt-5 mb-2 text-xs uppercase tracking-wider text-slate-500 font-semibold">Desde tu banquillo (gratis)</h4>
-                {benchOpts.map((b) => {
-                  const d = projection(b) - base;
-                  return (
-                    <OptionRow key={b.id} p={b} delta={d} label="Alinear" onClick={() => onBenchSwap(player.id, b.id)} />
-                  );
-                })}
-              </>
-            )}
-
-            <h4 className="mt-5 mb-2 text-xs uppercase tracking-wider text-slate-500 font-semibold">Reemplazos recomendados del mercado</h4>
-            <div className="space-y-2">
-              {options.length === 0 && <p className="text-sm text-slate-500">No hay {POS_LABEL[player.pos].toLowerCase()}s en el mercado.</p>}
-              {options.map(({ m, delta, affordable }) => (
-                <OptionRow key={m.id} p={m} delta={delta} disabled={!affordable || m.health !== 'ok'}
-                  note={!affordable ? `Te faltan ${fmtM(m.price - budget - player.price)}` : m.health !== 'ok' ? HEALTH_INFO[m.health].label : `Coste neto ${fmtM(m.price - player.price)}`}
-                  label="Fichar" onClick={() => onBuy(player.id, m.id)} />
-              ))}
-            </div>
+          <div className="card relative w-full sm:max-w-lg max-h-[88vh] overflow-auto rounded-b-none sm:rounded-b-[18px] p-4 sm:p-5 fade-in glow-purple" onClick={(e) => e.stopPropagation()}>
+            <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/10 text-slate-400" aria-label="Cerrar"><Icon name="x" /></button>
+            {children}
           </div>
         </div>
       );
     }
-
     function Kpi({ label, value, tone = 'text-white' }) {
       return (
-        <div className="rounded-xl bg-black/40 border border-white/10 py-2">
+        <div className="rounded-xl bg-black/40 border border-white/10 py-2 px-1">
           <div className="text-[10px] uppercase tracking-wider text-slate-500">{label}</div>
           <div className={`font-display font-bold text-sm ${tone}`}>{value}</div>
         </div>
       );
     }
-
     function OptionRow({ p, delta, disabled, note, label, onClick }) {
       return (
         <div className={`flex items-center gap-3 rounded-xl border p-2.5 ${delta > 0 ? 'border-neon/30 bg-neon/[.03]' : 'border-white/10 bg-black/30'}`}>
@@ -982,7 +1493,7 @@
               {p.isNew && <span className="text-[9px] font-mono text-hack border border-hack/50 rounded px-1">OCR</span>}
             </div>
             <div className="font-mono text-[10px] text-slate-400 mt-0.5 flex flex-wrap gap-x-2">
-              <span>{TEAMS[p.team].name}</span><span>{fmtM(p.price)}</span><span>{projection(p)} pts</span>
+              <span>{teamOf(p.team).name}</span><span>{fmtM(p.price)}</span><span>{projection(p)} pts</span>
               {note && <span className="text-slate-500">· {note}</span>}
             </div>
           </div>
@@ -992,16 +1503,13 @@
       );
     }
 
-    /* ---------- CALCULADORA DE GUERRA DE CLÁUSULAS ---------- */
-    function ClauseCalculator({ squad, rivals, setRivals }) {
-      const [playerId, setPlayerId] = useState(squad[0]?.id);
+    /* =====================================================
+       CALCULADORA DE GUERRA DE CLÁUSULAS
+    ===================================================== */
+    function ClauseCalculator({ squad, rivals, setRivals, playerId, setPlayerId }) {
       const [targetId, setTargetId] = useState(rivals[0]?.id);
       const [aggr, setAggr] = useState(60);
-
-      useEffect(() => {
-        if (!squad.find((p) => p.id === playerId)) setPlayerId(squad[0]?.id);
-      }, [squad, playerId]);
-
+      useEffect(() => { if (!squad.find((p) => p.id === playerId)) setPlayerId(squad[0]?.id); }, [squad, playerId]);
       const player = squad.find((p) => p.id === playerId) || squad[0];
       const target = rivals.find((r) => r.id === targetId) || rivals[0];
 
@@ -1009,46 +1517,39 @@
         if (!player || !target) return null;
         const hype = Math.max(0, player.trend) / 100 + Math.max(0, formAvg(player) - 5) * 0.02;
         const fairValue = player.price * (1 + hype);
-        const multiplier = 1.15 + (aggr / 100) * 0.85; // 1.15x → 2.0x
-        const inflated = player.price * multiplier;
-        // Precio "ruina": dejar al rival objetivo con solo un % mínimo de su caja
-        const leftPct = 0.25 - (aggr / 100) * 0.22; // 25% → 3%
+        const inflated = player.price * (1.15 + (aggr / 100) * 0.85);
+        const leftPct = 0.25 - (aggr / 100) * 0.22;
         const ruin = target.budget * (1 - leftPct);
         let price = Math.max(fairValue, inflated);
         if (ruin > price && ruin <= player.price * 3) price = ruin;
-        // Precio "psicológico" exacto en euros, terminado en ...999 €
         const exact = Math.floor(price * 1000) / 1000 - 0.000001;
-        const max = Math.max(...rivals.map((r) => r.budget));
-        return { fairValue, inflated, ruin, exact, leftPct, max };
-      }, [player, target, aggr, rivals]);
+        return { fairValue, exact };
+      }, [player, target, aggr]);
 
       const updateBudget = (id, v) => {
         const n = parseFloat(v);
         setRivals((rs) => rs.map((r) => (r.id === id ? { ...r, budget: isNaN(n) ? 0 : n } : r)));
       };
+      if (!player) return null;
 
       return (
-        <section className="card p-4 sm:p-5 border-hack/30">
-          <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-white flex items-center gap-2">
-            <Icon name="shield" className="w-5 h-5 text-hack" /> GUERRA DE CLÁUSULAS
-          </h2>
-          <p className="text-xs text-slate-400 mt-1">Calcula el precio de venta exacto en el mercado interno para que, si un rival te roba al jugador, se quede sin caja.</p>
-
+        <section id="clausulas" className="card p-4 sm:p-5">
+          <SectionTitle icon="shield" tone="text-hack">GUERRA DE CLÁUSULAS</SectionTitle>
+          <p className="text-xs text-slate-400 -mt-2">Calcula el precio de venta exacto en el mercado interno para que, si un rival te roba al jugador, se quede sin caja.</p>
           <div className="grid sm:grid-cols-2 gap-3 mt-4">
             <label className="block">
               <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Tu jugador</span>
-              <select value={playerId} onChange={(e) => setPlayerId(e.target.value)} className="mt-1 w-full rounded-xl bg-black/50 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hack">
+              <select value={player.id} onChange={(e) => setPlayerId(e.target.value)} className="field mt-1">
                 {squad.map((p) => <option key={p.id} value={p.id}>{p.name} · {fmtM(p.price)}</option>)}
               </select>
             </label>
             <label className="block">
               <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Rival a arruinar</span>
-              <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className="mt-1 w-full rounded-xl bg-black/50 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hack">
+              <select value={target.id} onChange={(e) => setTargetId(e.target.value)} className="field mt-1">
                 {rivals.map((r) => <option key={r.id} value={r.id}>{r.name} · {fmtM(r.budget)}</option>)}
               </select>
             </label>
           </div>
-
           <label className="block mt-4">
             <div className="flex justify-between text-[11px] uppercase tracking-wider font-semibold">
               <span className="text-slate-500">Agresividad</span>
@@ -1056,14 +1557,11 @@
             </div>
             <input type="range" min="0" max="100" value={aggr} onChange={(e) => setAggr(+e.target.value)} className="w-full mt-2" />
           </label>
-
           {calc && (
             <div className="mt-4 rounded-2xl bg-black/50 border border-hack/40 p-4 glow-purple">
               <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Precio exacto de venta</div>
               <div className="font-display font-black text-2xl sm:text-3xl text-hack glow-text-purple mt-1 break-words">{fmtEUR(calc.exact)}</div>
-              <div className="font-mono text-[11px] text-slate-400 mt-1">
-                {(calc.exact / player.price).toFixed(2)}x su valor ({fmtM(player.price)}) · valor justo con hype {fmtM(calc.fairValue)}
-              </div>
+              <div className="font-mono text-[11px] text-slate-400 mt-1">{(calc.exact / player.price).toFixed(2)}x su valor ({fmtM(player.price)}) · valor justo con hype {fmtM(calc.fairValue)}</div>
               <p className="text-xs text-slate-300 mt-3 leading-relaxed">
                 Si <b className="text-white">{target.name}</b> paga este precio, se queda con{' '}
                 <b className={target.budget - calc.exact < 0 ? 'text-neon' : 'text-danger'}>{target.budget - calc.exact < 0 ? 'nada: no puede pagarlo' : fmtM(target.budget - calc.exact)}</b>{' '}
@@ -1071,7 +1569,6 @@
               </p>
             </div>
           )}
-
           <div className="mt-4">
             <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2">Impacto por rival (edita su caja)</div>
             <div className="space-y-2">
@@ -1104,14 +1601,347 @@
       );
     }
 
-    /* ---------- TOASTS ---------- */
+    /* =====================================================
+       PESTAÑA MERCADO: PRECIOS, EN VIVO, ALERTAS, IMPORTAR
+    ===================================================== */
+    function MarketTab({ squad, market, budget, holes, watch, toggleWatch, live, setLive, actions, onImport, flashes, openPlayer, toast }) {
+      const [filter, setFilter] = useState('all');
+      const [pos, setPos] = useState('ALL');
+      const [q, setQ] = useState('');
+      const [open, setOpen] = useState(null);
+      const mineIds = useMemo(() => new Set(squad.map((p) => p.id)), [squad]);
+      const all = useMemo(() => [...squad, ...market], [squad, market]);
+      const list = all
+        .filter((p) => filter === 'all' || (filter === 'mine' ? mineIds.has(p.id) : filter === 'market' ? !mineIds.has(p.id) : watch.includes(p.id)))
+        .filter((p) => pos === 'ALL' || p.pos === pos)
+        .filter((p) => !q || norm(p.name).includes(norm(q)) || norm(teamOf(p.team).name).includes(norm(q)))
+        .sort((a, b) => b.trend - a.trend);
+      const rising = all.filter((p) => p.trend >= 8 && p.health === 'ok').sort((a, b) => b.trend - a.trend).slice(0, 6);
+
+      return (
+        <div className="space-y-5">
+          <section className="card p-4 sm:p-5">
+            <SectionTitle icon="live" tone={live ? 'text-danger' : 'text-neon'}
+              right={<button onClick={() => setLive(!live)} className={`text-xs rounded-lg px-3 py-1.5 ${live ? 'bg-danger/20 border border-danger/60 text-danger' : 'btn-neon'}`}>{live ? '■ Detener directo' : '▶ Activar directo'}</button>}>
+              MERCADO EN DIRECTO
+            </SectionTitle>
+            <p className="text-xs text-slate-400 -mt-2 leading-relaxed">
+              {live
+                ? 'Simulando las oscilaciones de precio del mercado cada pocos segundos según la tendencia de cada jugador. Los jugadores vigilados (★) te avisan cuando su precio se mueve.'
+                : 'Activa el directo para ver cómo se mueven los precios. Para datos reales, importa el JSON de tu liga o de una API en el panel de abajo.'}
+            </p>
+          </section>
+
+          {rising.length > 0 && (
+            <section className="card-purple p-4 sm:p-5">
+              <SectionTitle icon="bell" tone="text-hack">SUBIDAS INMINENTES</SectionTitle>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 -mt-1">
+                {rising.map((p) => (
+                  <div key={p.id} className="rounded-xl border border-neon/30 bg-black/40 p-3">
+                    <div className="flex items-center gap-1.5"><PosTag pos={p.pos} /><span className="font-semibold text-white text-sm truncate">{p.name}</span>{mineIds.has(p.id) && <span className="text-[9px] font-mono text-neon border border-neon/50 rounded px-1">TUYO</span>}</div>
+                    <p className="text-xs text-slate-300 mt-1.5">Subirá ~<b className="text-neon">{p.trend}%</b> (≈ +{fmtM(p.price * p.trend / 100)}) en el próximo cierre.</p>
+                    <PriceChart p={p} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="card p-4 sm:p-5">
+            <SectionTitle icon="chart">PRECIOS Y GRÁFICAS</SectionTitle>
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar jugador o equipo…" className="field sm:max-w-xs" />
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+                {[['all', 'Todos'], ['mine', 'Mi plantilla'], ['market', 'Mercado'], ['watch', '★ Vigilados']].map(([k, l]) => (
+                  <button key={k} onClick={() => setFilter(k)} className={`shrink-0 text-xs px-3 py-1.5 rounded-lg border ${filter === k ? 'border-neon bg-neon/15 text-neon' : 'border-white/10 text-slate-400'}`}>{l}</button>
+                ))}
+                {['ALL', ...POSITIONS].map((k) => (
+                  <button key={k} onClick={() => setPos(k)} className={`shrink-0 font-mono text-xs px-2.5 py-1.5 rounded-lg border ${pos === k ? 'border-hack bg-hack/15 text-white' : 'border-white/10 text-slate-400'}`}>{k === 'ALL' ? 'TODAS' : k}</button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {list.length === 0 && <p className="text-sm text-slate-500">Sin resultados.</p>}
+              {list.map((p) => {
+                const mine = mineIds.has(p.id);
+                const fl = flashes[p.id];
+                return (
+                  <div key={p.id} className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+                    <div key={fl ? fl.t : 0} className={`grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1.4fr_120px_auto] items-center gap-3 px-3 py-2 cursor-pointer ${fl ? (fl.up ? 'flash-up' : 'flash-down') : ''}`}
+                      onClick={() => setOpen(open === p.id ? null : p.id)}>
+                      <button onClick={(e) => { e.stopPropagation(); toggleWatch(p.id); }} className={watch.includes(p.id) ? 'text-warn' : 'text-slate-600 hover:text-slate-300'} title="Vigilar precio">
+                        <Icon name="star" className="w-4 h-4" />
+                      </button>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <PosTag pos={p.pos} /><HealthDot health={p.health} />
+                          <span className="font-semibold text-sm text-white truncate">{p.name}</span>
+                          {mine && <span className="text-[9px] font-mono text-neon border border-neon/50 rounded px-1 shrink-0">TUYO</span>}
+                        </div>
+                        <div className="font-mono text-[10px] text-slate-500 mt-0.5">{teamOf(p.team).name} · {projection(p)} pts proy.</div>
+                      </div>
+                      <div className="hidden sm:block"><PriceChart p={p} /></div>
+                      <div className="text-right">
+                        <div className="font-display font-bold text-sm text-white">{fmtM(p.price)}</div>
+                        <TrendTag trend={p.trend} />
+                      </div>
+                    </div>
+                    {open === p.id && (
+                      <div className="px-3 pb-3 fade-in">
+                        <PriceChart p={p} w={520} h={120} big />
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {mine ? (
+                            <button onClick={() => openPlayer(p.id)} className="btn-hack text-xs rounded-lg px-3 py-1.5">Gestionar jugador</button>
+                          ) : (
+                            <>
+                              <button disabled={p.price > budget} onClick={() => actions.addPlayer(p.id, false)} className="btn-neon text-xs rounded-lg px-3 py-1.5">Fichar al banquillo</button>
+                              {holes[p.pos] > 0 && <button disabled={p.price > budget || p.health !== 'ok'} onClick={() => actions.addPlayer(p.id, true)} className="btn-hack text-xs rounded-lg px-3 py-1.5">Fichar y alinear</button>}
+                              {p.price > budget && <span className="text-xs text-danger self-center">Te faltan {fmtM(p.price - budget)}</span>}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <ImportPanel onImport={onImport} toast={toast} />
+        </div>
+      );
+    }
+
+    const SAMPLE_JSON = `{
+  "budget": 18.5,
+  "squad": [
+    { "name": "Pedri González", "team": "BAR", "pos": "MED", "price": 18.4,
+      "points": 70, "avg": 7.0, "form": [8,9,6,7,8], "health": "ok",
+      "trend": 4, "starter": true }
+  ],
+  "market": [
+    { "name": "Nico Williams", "team": "ATH", "pos": "DEL", "price": 18.2, "trend": 6 }
+  ]
+}`;
+    function ImportPanel({ onImport, toast }) {
+      const [url, setUrl] = useState(() => { try { return localStorage.getItem('fh-url') || ''; } catch (e) { return ''; } });
+      const [text, setText] = useState('');
+      const [busy, setBusy] = useState(false);
+      const fileRef = useRef(null);
+      const apply = (raw) => {
+        try {
+          const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          onImport(data);
+        } catch (e) { toast('JSON no válido: ' + e.message, 'error'); }
+      };
+      const fromUrl = async () => {
+        if (!url) return;
+        setBusy(true);
+        try {
+          try { localStorage.setItem('fh-url', url); } catch (e) { /* sin almacenamiento */ }
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          apply(await res.json());
+        } catch (e) {
+          toast('No se pudo leer la URL (' + e.message + '). Comprueba que permite CORS.', 'error');
+        } finally { setBusy(false); }
+      };
+      return (
+        <section className="card p-4 sm:p-5">
+          <SectionTitle icon="download">DATOS EN DIRECTO / IMPORTAR</SectionTitle>
+          <p className="text-xs text-slate-400 -mt-2 leading-relaxed">
+            Conecta tu propia fuente de datos: una URL que devuelva JSON (tu API, un Google Sheet publicado como JSON, un script…) o pega/sube el JSON. Se sustituye tu plantilla y/o el mercado.
+          </p>
+          <div className="flex gap-2 mt-3">
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://mi-api.com/fantasy.json" className="field" />
+            <button onClick={fromUrl} disabled={busy || !url} className="btn-neon rounded-xl px-4 text-xs shrink-0">{busy ? 'Leyendo…' : 'Cargar'}</button>
+          </div>
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} placeholder="…o pega aquí el JSON" className="field mt-2 font-mono text-xs" />
+          <div className="flex flex-wrap gap-2 mt-2">
+            <button onClick={() => apply(text)} disabled={!text.trim()} className="btn-hack rounded-lg px-3 py-1.5 text-xs">Importar JSON pegado</button>
+            <button onClick={() => fileRef.current?.click()} className="btn-ghost rounded-lg px-3 py-1.5 text-xs">Subir archivo .json</button>
+            <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => {
+              const f = e.target.files[0]; if (!f) return;
+              f.text().then(apply); e.target.value = '';
+            }} />
+          </div>
+          <details className="mt-3">
+            <summary className="text-xs text-slate-400 cursor-pointer">Ver formato esperado</summary>
+            <pre className="mt-2 text-[11px] font-mono text-neon/80 bg-black/50 rounded-xl p-3 overflow-x-auto">{SAMPLE_JSON}</pre>
+            <p className="text-[11px] text-slate-500 mt-1">pos: POR, DEF, MED o DEL · health: ok, duda, lesionado o sancionado · team: código (BAR) o nombre (FC Barcelona). Los campos que falten se rellenan con valores por defecto.</p>
+          </details>
+        </section>
+      );
+    }
+
+    /* =====================================================
+       PESTAÑA LIGA: CLASIFICACIÓN, ESPÍA, PUJAS
+    ===================================================== */
+    function LeagueTab({ standings, rivals, squad, bids, onProtect }) {
+      const [spyId, setSpyId] = useState(rivals[0]?.id);
+      const spy = rivals.find((r) => r.id === spyId) || rivals[0];
+      const spySquad = spy ? spy.squadIds.map((id) => DB[id]).filter(Boolean) : [];
+      const spyProj = spySquad.reduce((s, p) => s + projection(p), 0) + Math.max(0, ...spySquad.map(projection));
+      const weak = [...spySquad].sort((a, b) => projection(a) - projection(b))[0];
+      const star = [...spySquad].sort((a, b) => projection(b) - projection(a))[0];
+      const threats = spy ? squad.filter((p) => p.price <= spy.budget).sort((a, b) => b.price - a.price).slice(0, 5) : [];
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start [&>*]:min-w-0">
+          <section className="card p-4 sm:p-5">
+            <SectionTitle icon="trophy" tone="text-warn">CLASIFICACIÓN</SectionTitle>
+            <div className="space-y-1.5">
+              {standings.map((s, i) => (
+                <button key={s.id} onClick={() => s.id !== 'me' && setSpyId(s.id)}
+                  className={`w-full grid grid-cols-[28px_1fr_auto] items-center gap-3 rounded-xl px-3 py-2.5 border text-left transition ${s.id === 'me' ? 'border-neon/50 bg-neon/[.06]' : s.id === spyId ? 'border-hack/60 bg-hack/10' : 'border-white/10 bg-black/30 hover:border-white/25'}`}>
+                  <span className={`font-display font-black ${i === 0 ? 'text-warn' : 'text-slate-500'}`}>{i + 1}</span>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-white truncate">{s.name}{s.id === 'me' && ' (tú)'}</div>
+                    <div className="font-mono text-[10px] text-slate-500">Última: {s.last} pts · Caja {fmtM(s.budget)} · Plantilla {fmtM(s.value)}</div>
+                  </div>
+                  <span className="font-display font-bold text-white">{s.points}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-slate-500 mt-3 font-mono">💡 Toca un rival para espiar su plantilla.</p>
+          </section>
+
+          {spy && (
+            <section className="card-purple p-4 sm:p-5">
+              <SectionTitle icon="eye" tone="text-hack">ESPÍA: {spy.name.toUpperCase()}</SectionTitle>
+              <div className="grid grid-cols-3 gap-2 text-center -mt-1">
+                <Kpi label="Caja" value={fmtM(spy.budget)} tone="text-hack" />
+                <Kpi label="Proyección" value={`${spyProj.toFixed(0)} pts`} />
+                <Kpi label="Valor" value={fmtM(spySquad.reduce((s, p) => s + p.price, 0))} />
+              </div>
+              {star && weak && (
+                <p className="text-sm text-slate-300 mt-3 leading-relaxed">
+                  <span className="text-hack font-semibold">Informe: </span>
+                  Su arma es <b className="text-white">{star.name}</b> ({projection(star)} pts proyectados, seguramente su capitán). Su punto débil es <b className="text-white">{weak.name}</b> ({projection(weak)} pts{weak.health !== 'ok' ? `, ${HEALTH_INFO[weak.health].label.toLowerCase()}` : ''}).
+                  {spy.budget > 15 ? ` Tiene ${fmtM(spy.budget)} en caja: puede pujar fuerte esta jornada.` : ' Tiene poca caja: aprovecha para pujar por jugadores que quiera.'}
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-3">
+                {spySquad.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 rounded-lg bg-black/40 border border-white/5 px-2.5 py-1.5">
+                    <PosTag pos={p.pos} /><HealthDot health={p.health} />
+                    <span className="text-sm text-white truncate flex-1">{p.short}</span>
+                    <span className="font-mono text-[10px] text-slate-400">{projection(p)} pts</span>
+                  </div>
+                ))}
+              </div>
+              <h4 className="mt-4 mb-2 text-xs uppercase tracking-wider text-slate-400 font-semibold">Jugadores tuyos que puede robarte</h4>
+              {threats.length === 0 && <p className="text-xs text-slate-500">Ninguno: no tiene caja suficiente.</p>}
+              <div className="space-y-1.5">
+                {threats.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 rounded-lg bg-black/40 border border-danger/30 px-2.5 py-1.5">
+                    <span className="text-sm text-white truncate flex-1">{p.name} <span className="font-mono text-[10px] text-slate-500">{fmtM(p.price)}</span></span>
+                    <button onClick={() => onProtect(p.id)} className="btn-hack text-[11px] rounded-lg px-2.5 py-1">Blindar</button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="card p-4 sm:p-5 lg:col-span-2">
+            <SectionTitle icon="swap">HISTORIAL DE PUJAS Y FICHAJES</SectionTitle>
+            <div className="space-y-1.5 max-h-[360px] overflow-auto">
+              {bids.map((b) => (
+                <div key={b.id} className="grid grid-cols-[40px_1fr_auto] items-center gap-3 rounded-xl bg-black/30 border border-white/5 px-3 py-2">
+                  <span className="font-mono text-[11px] text-slate-500">J{b.j}</span>
+                  <div className="min-w-0 text-sm">
+                    <b className={b.who === 'Tú' ? 'text-neon' : 'text-white'}>{b.who}</b>{' '}
+                    <span className="text-slate-400">{b.type === 'compra' ? 'fichó a' : b.type === 'venta' ? 'vendió a' : 'pujó por'}</span>{' '}
+                    <span className="text-white">{b.player}</span>
+                  </div>
+                  <span className={`font-mono text-xs ${b.type === 'venta' ? 'text-neon' : 'text-hack'}`}>{fmtM(b.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      );
+    }
+
+    /* =====================================================
+       PESTAÑA JORNADA: SIMULADOR + HISTORIAL
+    ===================================================== */
+    function MatchdayTab({ jornada, projTotal, result, onSimulate, onApply, history }) {
+      const maxH = Math.max(80, ...history.map((h) => h.total));
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-5 items-start">
+          <section className="card p-4 sm:p-5">
+            <SectionTitle icon="play">SIMULADOR · JORNADA {jornada}</SectionTitle>
+            <p className="text-xs text-slate-400 -mt-2">Juega la jornada con tu once actual. Cada jugador puntúa según su proyección más el azar del fútbol; el capitán suma doble. Tu proyección: <b className="text-neon">{projTotal.toFixed(1)} pts</b>.</p>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <button onClick={onSimulate} className="btn-neon rounded-xl px-4 py-2.5 text-sm flex items-center gap-2"><Icon name="play" className="w-4 h-4" /> {result ? 'Volver a simular' : 'Simular jornada'}</button>
+              {result && <button onClick={onApply} className="btn-hack rounded-xl px-4 py-2.5 text-sm">Cerrar jornada y actualizar liga →</button>}
+            </div>
+            {result && (
+              <div className="mt-5 fade-in">
+                <div className="rounded-2xl border border-neon/40 bg-neon/[.05] p-4 text-center">
+                  <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Tus puntos</div>
+                  <div className="font-display font-black text-4xl text-neon glow-text-green">{result.mine}</div>
+                  <div className={`text-xs mt-1 ${result.mine >= projTotal ? 'text-neon' : 'text-danger'}`}>{result.mine >= projTotal ? '▲' : '▼'} {Math.abs(result.mine - projTotal).toFixed(1)} vs proyección</div>
+                </div>
+                <div className="space-y-1.5 mt-3">
+                  {result.rows.map((r) => (
+                    <div key={r.p.id} className="flex items-center gap-2 rounded-lg bg-black/40 border border-white/5 px-2.5 py-1.5">
+                      <PosTag pos={r.p.pos} />
+                      <span className="text-sm text-white truncate">{r.p.short}{r.captain && <span className="text-hack"> ©</span>}</span>
+                      <span className="text-[11px] text-slate-400 truncate flex-1">{r.events.join(' ')}</span>
+                      <span className={`font-display font-bold text-sm ${r.total >= 8 ? 'text-neon' : r.total <= 1 ? 'text-danger' : 'text-white'}`}>{r.total}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+          <div className="space-y-5">
+            {result && (
+              <section className="card-purple p-4 sm:p-5 fade-in">
+                <SectionTitle icon="trophy" tone="text-warn">RESULTADOS DE LA LIGA</SectionTitle>
+                <div className="space-y-1.5">
+                  {[{ id: 'me', name: 'Tú', pts: result.mine }, ...result.rivalRows].sort((a, b) => b.pts - a.pts).map((r, i) => (
+                    <div key={r.id} className={`flex items-center gap-3 rounded-lg px-3 py-2 border ${r.id === 'me' ? 'border-neon/50 bg-neon/[.06]' : 'border-white/10 bg-black/30'}`}>
+                      <span className="font-display font-black text-slate-500 w-5">{i + 1}</span>
+                      <span className="flex-1 text-sm text-white truncate">{r.name}</span>
+                      <span className="font-display font-bold text-white">{r.pts}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+            <section className="card p-4 sm:p-5">
+              <SectionTitle icon="chart">TUS JORNADAS</SectionTitle>
+              {history.length === 0 ? (
+                <p className="text-xs text-slate-500">Cuando cierres una jornada aparecerá aquí tu evolución.</p>
+              ) : (
+                <div className="flex items-end gap-2 h-40 pt-4">
+                  {history.slice(-10).map((h) => (
+                    <div key={h.j} className="flex-1 flex flex-col items-center justify-end gap-1 min-w-0 h-full">
+                      <span className="font-mono text-[10px] text-white">{h.total}</span>
+                      <div className="w-full rounded-t-md bg-gradient-to-t from-hack to-neon" style={{ height: `${Math.max(4, (h.total / maxH) * 70)}%` }} title={`J${h.j}: ${h.total} pts, ${h.rank}º`} />
+                      <span className="font-mono text-[10px] text-slate-500">J{h.j}</span>
+                      <span className="font-mono text-[9px] text-hack">{h.rank}º</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      );
+    }
+
+    /* =====================================================
+       TOASTS
+    ===================================================== */
     function Toasts({ toasts }) {
       return (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-[calc(100%-32px)] max-w-sm pointer-events-none">
           {toasts.map((t) => (
-            <div key={t.id} className={`fade-in rounded-xl px-4 py-3 text-sm font-semibold border backdrop-blur-md ${t.tone === 'error' ? 'bg-danger/15 border-danger/50 text-danger' : 'bg-black/80 border-neon/50 text-neon glow-green'}`}>
-              {t.msg}
-            </div>
+            <div key={t.id} className={`fade-in rounded-xl px-4 py-3 text-sm font-semibold border backdrop-blur-md ${t.tone === 'error' ? 'bg-danger/15 border-danger/50 text-danger' : 'bg-black/85 border-neon/50 text-neon glow-green'}`}>{t.msg}</div>
           ))}
         </div>
       );
@@ -1126,25 +1956,68 @@
       const [market, setMarket] = useState(saved?.market || INITIAL_MARKET);
       const [budget, setBudget] = useState(saved?.budget ?? INITIAL_BUDGET);
       const [rivals, setRivals] = useState(saved?.rivals || INITIAL_RIVALS);
-      const [selectedId, setSelectedId] = useState(null);
+      const [formation, setFormationState] = useState(saved?.formation || '4-3-3');
+      const [captainId, setCaptainId] = useState(saved?.captainId !== undefined ? saved.captainId : 's6');
+      const [jornada, setJornada] = useState(saved?.jornada || 11);
+      const [myPoints, setMyPoints] = useState(saved?.myPoints ?? INITIAL_POINTS);
+      const [myLast, setMyLast] = useState(saved?.myLast ?? 58);
+      const [bids, setBids] = useState(saved?.bids || INITIAL_BIDS);
+      const [history, setHistory] = useState(saved?.history || []);
+      const [watch, setWatch] = useState(saved?.watch || ['m4', 'm8', 's11']);
+      const [notifyOn, setNotifyOn] = useState(saved?.notifyOn || false);
+      const [tab, setTab] = useState(() => { try { return localStorage.getItem('fh-tab') || 'hacker'; } catch (e) { return 'hacker'; } });
+      const [live, setLive] = useState(false);
+      const [sheet, setSheet] = useState(null);
+      const [clausePlayerId, setClausePlayerId] = useState(null);
+      const [result, setResult] = useState(null);
       const [toasts, setToasts] = useState([]);
+      const [flashes, setFlashes] = useState({});
+      const [canInstall, setCanInstall] = useState(!!window.__fhInstall);
 
-      useEffect(() => { saveState({ squad, market, budget, rivals }); }, [squad, market, budget, rivals]);
+      ROUND.current = jornada;
 
-      const toast = useCallback((msg, tone = 'ok') => {
-        const id = Math.random().toString(36).slice(2);
-        setToasts((t) => [...t, { id, msg, tone }]);
-        setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
+      useEffect(() => {
+        saveState({ squad, market, budget, rivals, formation, captainId, jornada, myPoints, myLast, bids, history, watch, notifyOn });
+      }, [squad, market, budget, rivals, formation, captainId, jornada, myPoints, myLast, bids, history, watch, notifyOn]);
+      useEffect(() => { try { localStorage.setItem('fh-tab', tab); } catch (e) { /* sin almacenamiento */ } }, [tab]);
+      useEffect(() => {
+        const h = () => setCanInstall(true);
+        window.addEventListener('fh-install-ready', h);
+        return () => window.removeEventListener('fh-install-ready', h);
       }, []);
 
-      const squadValue = useMemo(() => squad.reduce((s, p) => s + p.price, 0), [squad]);
-      const projTotal = useMemo(() => squad.filter((p) => p.starter).reduce((s, p) => s + projection(p), 0), [squad]);
-      const hacks = useMemo(() => generateHacks(squad, market, budget), [squad, market, budget]);
-      const cards = useMemo(() => generateCards(squad, market), [squad, market]);
-      const squadMap = useMemo(() => Object.fromEntries(squad.map((p) => [p.id, p])), [squad]);
-      const marketMap = useMemo(() => Object.fromEntries(market.map((p) => [p.id, p])), [market]);
+      const toast = useCallback((msg, tone = 'ok') => {
+        const id = uid('t');
+        setToasts((t) => [...t.slice(-3), { id, msg, tone }]);
+        setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3400);
+      }, []);
+      const notify = useCallback((title, body) => {
+        const sent = notifyOn && systemNotify(title, body);
+        toast(sent ? `🔔 ${title}` : `🔔 ${title}: ${body}`);
+      }, [notifyOn, toast]);
 
-      // Vende al titular y ficha al jugador del mercado en su lugar
+      // Refs para los intervalos
+      const ref = useRef({});
+      ref.current = { squad, market, watch, notify };
+
+      const squadValue = useMemo(() => squad.reduce((s, p) => s + p.price, 0), [squad]);
+      const projTotal = useMemo(() => {
+        const st = squad.filter((p) => p.starter);
+        const cap = st.find((p) => p.id === captainId);
+        return st.reduce((s, p) => s + projection(p), 0) + (cap ? projection(cap) : 0);
+      }, [squad, captainId, jornada]);
+      const hacks = useMemo(() => generateHacks(squad, market, budget, formation, captainId), [squad, market, budget, formation, captainId, jornada]);
+      const cards = useMemo(() => generateCards(squad, market), [squad, market, jornada]);
+      const lookup = useMemo(() => Object.fromEntries([...market, ...squad].map((p) => [p.id, p])), [squad, market]);
+      const holes = useMemo(() => holesOf(squad, formation), [squad, formation]);
+      const standings = useMemo(() => [
+        { id: 'me', name: 'Tú', points: myPoints, last: myLast, budget, value: squadValue },
+        ...rivals.map((r) => ({ id: r.id, name: r.name, points: r.points, last: r.last, budget: r.budget, value: r.squadIds.reduce((s, id) => s + (DB[id]?.price || 0), 0) })),
+      ].sort((a, b) => b.points - a.points), [rivals, myPoints, myLast, budget, squadValue]);
+
+      /* ---------- Acciones ---------- */
+      const recordBid = (type, player, amount) => setBids((b) => [{ id: uid('b'), j: jornada, who: 'Tú', type, player, amount }, ...b].slice(0, 60));
+
       const buyReplacement = (outId, inId) => {
         const out = squad.find((p) => p.id === outId);
         const inn = market.find((p) => p.id === inId);
@@ -1152,72 +2025,260 @@
         if (inn.price > budget + out.price) { toast('Presupuesto insuficiente para este hack', 'error'); return; }
         const before = projection(out);
         setSquad((sq) => sq.map((p) => (p.id === outId ? { ...inn, starter: out.starter, isNew: false } : p)));
-        setMarket((mk) => [...mk.filter((p) => p.id !== inId), { ...out, starter: undefined }]);
-        setBudget((b) => Math.round((b + out.price - inn.price) * 10) / 10);
-        setSelectedId(null);
+        setMarket((mk) => [...mk.filter((p) => p.id !== inId), { ...out, starter: false }]);
+        setBudget((b) => r1(b + out.price - inn.price));
+        if (captainId === outId) setCaptainId(inId);
+        recordBid('venta', out.name, out.price); recordBid('compra', inn.name, inn.price);
+        setSheet(null);
         const d = projection(inn) - before;
         toast(`⚡ ${inn.short} entra por ${out.short} · ${d >= 0 ? '+' : ''}${d.toFixed(1)} pts`);
       };
-
+      const addPlayer = (inId, asStarter) => {
+        const inn = market.find((p) => p.id === inId);
+        if (!inn) return;
+        if (inn.price > budget) { toast('No tienes caja suficiente', 'error'); return; }
+        const starter = asStarter && holes[inn.pos] > 0;
+        setSquad((sq) => [...sq, { ...inn, starter, isNew: false }]);
+        setMarket((mk) => mk.filter((p) => p.id !== inId));
+        setBudget((b) => r1(b - inn.price));
+        recordBid('compra', inn.name, inn.price);
+        setSheet(null);
+        toast(`✔ ${inn.short} fichado ${starter ? 'y alineado' : 'al banquillo'} por ${fmtM(inn.price)}`);
+      };
+      const sellPlayer = (id) => {
+        const p = squad.find((x) => x.id === id);
+        if (!p) return;
+        setSquad((sq) => sq.filter((x) => x.id !== id));
+        setMarket((mk) => [{ ...p, starter: false }, ...mk]);
+        setBudget((b) => r1(b + p.price));
+        if (captainId === id) setCaptainId(null);
+        recordBid('venta', p.name, p.price);
+        setSheet(null);
+        toast(`💰 ${p.short} vendido por ${fmtM(p.price)}`);
+      };
       const benchSwap = (outId, inId) => {
         setSquad((sq) => sq.map((p) => (p.id === outId ? { ...p, starter: false } : p.id === inId ? { ...p, starter: true } : p)));
-        setSelectedId(null);
+        if (captainId === outId) setCaptainId(inId);
+        setSheet(null);
         const a = squad.find((p) => p.id === inId);
         toast(`🔁 ${a ? a.short : 'Suplente'} pasa al once titular`);
       };
+      const setCaptain = (id) => {
+        setCaptainId(id);
+        setSheet(null);
+        const p = squad.find((x) => x.id === id);
+        toast(`© ${p ? p.short : 'Jugador'} es tu nuevo capitán (puntúa x2)`);
+      };
+      const setFormation = (f) => {
+        setFormationState(f);
+        const next = autoLineup(squad, f);
+        setSquad(next);
+        if (!next.find((p) => p.id === captainId && p.starter)) { const b = bestCaptain(next); setCaptainId(b ? b.id : null); }
+        toast(`Formación ${f} aplicada`);
+      };
+      const autoAlign = () => {
+        const next = autoLineup(squad, formation);
+        setSquad(next);
+        const b = bestCaptain(next);
+        if (b) setCaptainId(b.id);
+        toast('🤖 La IA ha alineado tu mejor once y elegido capitán');
+      };
+      const actions = { buyReplacement, addPlayer, sellPlayer, benchSwap, setCaptain };
 
       const executeHack = (h) => {
         if (h.type === 'swap') buyReplacement(h.outId, h.inId);
         else if (h.type === 'bench') benchSwap(h.outId, h.inId);
+        else if (h.type === 'fill') addPlayer(h.inId, true);
+        else if (h.type === 'captain') setCaptain(h.inId);
       };
 
-      const onAnalyzed = (mode) => {
+      const onAnalyzed = (mode, payload) => {
         if (mode === 'team') {
-          setSquad(OCR_SQUAD);
-          setBudget(OCR_BUDGET);
-          toast('✔ Equipo leído: 14 jugadores importados al campo');
+          const players = (payload?.players || OCR_SQUAD).map((p) => ({ ...p, isNew: false }));
+          const next = autoLineup(players, formation);
+          setSquad(next);
+          const taken = new Set(next.map((p) => p.id));
+          setMarket((mk) => mk.filter((p) => !taken.has(p.id)));
+          if (!payload) setBudget(OCR_BUDGET);
+          else if (payload.budget > 0) setBudget(r1(payload.budget));
+          const b = bestCaptain(next);
+          setCaptainId(b ? b.id : null);
+          toast(`✔ Equipo leído${payload ? ' con ' + payload.source : ''}: ${next.length} jugadores importados`);
         } else {
+          const incoming = (payload?.players || OCR_MARKET).map((p) => ({ ...p, isNew: true, starter: false }));
+          const squadIds = new Set(squad.map((p) => p.id));
+          const fresh = incoming.filter((p) => !squadIds.has(p.id));
           setMarket((mk) => {
-            const ids = new Set(mk.map((p) => p.id));
-            const squadIds = new Set(squad.map((p) => p.id));
-            return [...OCR_MARKET.filter((p) => !ids.has(p.id) && !squadIds.has(p.id)), ...mk];
+            const ids = new Set(fresh.map((p) => p.id));
+            return [...fresh, ...mk.filter((p) => !ids.has(p.id))];
           });
-          toast('✔ Mercado leído: 5 oportunidades nuevas detectadas');
+          toast(`✔ Mercado leído: ${fresh.length} jugadores detectados`);
         }
       };
 
+      const onImport = (data) => {
+        const sq = Array.isArray(data.squad) ? data.squad.map(normalizePlayer) : null;
+        const mk = Array.isArray(data.market) ? data.market.map(normalizePlayer) : null;
+        if (!sq && !mk) { toast('El JSON debe tener "squad" y/o "market"', 'error'); return; }
+        if (sq) {
+          const next = sq.some((p) => p.starter) ? sq : autoLineup(sq, formation);
+          setSquad(next);
+          const b = bestCaptain(next); setCaptainId(b ? b.id : null);
+        }
+        if (mk) setMarket(mk);
+        if (typeof data.budget === 'number') setBudget(r1(data.budget));
+        toast(`✔ Datos importados${sq ? ` · ${sq.length} en plantilla` : ''}${mk ? ` · ${mk.length} en mercado` : ''}`);
+      };
+
+      const toggleWatch = (id) => setWatch((w) => (w.includes(id) ? w.filter((x) => x !== id) : [...w, id]));
+      const openPlayer = (id) => setSheet({ mode: 'player', id });
+      const protect = (id) => {
+        setClausePlayerId(id);
+        setTab('hacker');
+        setTimeout(() => document.getElementById('clausulas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+      };
+
+      /* ---------- Mercado en directo (simulado) ---------- */
+      useEffect(() => {
+        if (!live) return;
+        const t = setInterval(() => {
+          const { squad: sq, market: mk, watch: w, notify: nt } = ref.current;
+          const pool = [...sq, ...mk];
+          const chosen = new Set();
+          for (let i = 0; i < 3 && pool.length; i++) chosen.add(pool[Math.floor(Math.random() * pool.length)].id);
+          const changes = {};
+          const move = (p) => {
+            if (!chosen.has(p.id)) return p;
+            const pct = p.trend / 100 / 4 + (Math.random() - 0.45) * 0.03;
+            const price = r2(Math.max(0.3, p.price * (1 + pct)));
+            const trend = clamp(Math.round(p.trend + (pct > 0 ? 1 : -1) * Math.random() * 2), -15, 18);
+            changes[p.id] = { p, pct, price };
+            return { ...p, price, trend, hist: [...histOf(p).slice(1), price] };
+          };
+          setSquad(sq.map(move));
+          setMarket(mk.map(move));
+          const fl = {};
+          Object.entries(changes).forEach(([id, { p, pct, price }]) => {
+            fl[id] = { up: pct >= 0, t: Date.now() };
+            if (w.includes(id) && pct >= 0.015) nt(`${p.short} sube ${(pct * 100).toFixed(1)}%`, `Ahora vale ${fmtM(price)}. ¡Ficha o blinda antes del cierre!`);
+            if (w.includes(id) && pct <= -0.02) nt(`${p.short} cae ${(Math.abs(pct) * 100).toFixed(1)}%`, `Ahora vale ${fmtM(price)}.`);
+          });
+          setFlashes((f) => ({ ...f, ...fl }));
+        }, 5000);
+        return () => clearInterval(t);
+      }, [live]);
+
+      /* ---------- Avisos de cierre de mercado ---------- */
+      const notified = useRef({});
+      const hackCount = hacks.length;
+      useEffect(() => {
+        if (!notifyOn) return;
+        const check = () => {
+          const close = nextMarketClose();
+          const left = close - Date.now();
+          [[60, '1 hora'], [15, '15 minutos']].forEach(([mins, label]) => {
+            const k = close.getTime() + '-' + mins;
+            if (left <= mins * 60000 && !notified.current[k]) {
+              notified.current[k] = true;
+              ref.current.notify(`El mercado cierra en ${label}`, `Revisa tu once, el capitán y tus ${hackCount} hacks pendientes.`);
+            }
+          });
+        };
+        check();
+        const t = setInterval(check, 30000);
+        return () => clearInterval(t);
+      }, [notifyOn, hackCount]);
+
+      const toggleNotify = async () => {
+        if (notifyOn) { setNotifyOn(false); toast('Avisos desactivados'); return; }
+        if (!('Notification' in window)) { setNotifyOn(true); toast('Tu navegador no soporta notificaciones: te avisaré dentro de la app'); return; }
+        try {
+          const perm = await Notification.requestPermission();
+          setNotifyOn(true);
+          toast(perm === 'granted' ? '🔔 Avisos activados: cierre de mercado y precios vigilados' : 'Permiso denegado: te avisaré dentro de la app');
+        } catch (e) { setNotifyOn(true); }
+      };
+      const install = async () => {
+        const ev = window.__fhInstall;
+        if (!ev) return;
+        ev.prompt();
+        const choice = await ev.userChoice.catch(() => null);
+        window.__fhInstall = null; setCanInstall(false);
+        if (choice && choice.outcome === 'accepted') toast('📲 Fantasy Hacker instalada');
+      };
+
+      /* ---------- Jornada ---------- */
+      const simulate = () => setResult(simulateMatchday(squad, captainId, rivals));
+      const applyMatchday = () => {
+        if (!result) return;
+        const myPts = Object.fromEntries(result.rows.map((r) => [r.p.id, r.pts]));
+        const rank = [{ id: 'me', pts: result.mine }, ...result.rivalRows].sort((a, b) => b.pts - a.pts).findIndex((x) => x.id === 'me') + 1;
+        setMyPoints((p) => p + result.mine);
+        setMyLast(result.mine);
+        setRivals((rs) => rs.map((r) => {
+          const rr = result.rivalRows.find((x) => x.id === r.id);
+          return rr ? { ...r, points: r.points + rr.pts, last: rr.pts, budget: r1(r.budget + 1 + Math.random() * 3) } : r;
+        }));
+        setSquad((sq) => sq.map((p) => evolvePlayer(p, myPts[p.id] ?? simPoints(p).pts)));
+        setMarket((mk) => mk.map((p) => evolvePlayer(p, simPoints(p).pts)));
+        setHistory((h) => [...h, { j: jornada, total: result.mine, rank }]);
+        // Los rivales mueven ficha en el mercado
+        const r = rivals[Math.floor(Math.random() * rivals.length)];
+        const target = market[Math.floor(Math.random() * market.length)];
+        if (r && target) setBids((b) => [{ id: uid('b'), j: jornada, who: r.name, type: 'puja', player: target.name, amount: r1(target.price * 1.1) }, ...b].slice(0, 60));
+        setBudget((b) => r1(b + 2));
+        setJornada((j) => j + 1);
+        setResult(null);
+        toast(`🏁 Jornada ${jornada} cerrada: ${result.mine} pts · ${rank}º de la jornada · +2.0M€ de premio`);
+      };
+
       const reset = () => {
-        setSquad(INITIAL_SQUAD); setMarket(INITIAL_MARKET); setBudget(INITIAL_BUDGET); setRivals(INITIAL_RIVALS); setSelectedId(null);
+        if (!confirm('¿Reiniciar todos los datos de prueba?')) return;
+        setSquad(INITIAL_SQUAD); setMarket(INITIAL_MARKET); setBudget(INITIAL_BUDGET); setRivals(INITIAL_RIVALS);
+        setFormationState('4-3-3'); setCaptainId('s6'); setJornada(11); setMyPoints(INITIAL_POINTS); setMyLast(58);
+        setBids(INITIAL_BIDS); setHistory([]); setResult(null); setSheet(null); setLive(false);
         toast('Datos de prueba restaurados');
       };
 
-      const selected = squad.find((p) => p.id === selectedId) || null;
+      const tabAlerts = { hacker: hacks.filter((h) => h.severity === 'critical').length, mercado: 0, liga: 0, jornada: result ? 1 : 0 };
 
       return (
         <>
-          <Navbar squadValue={squadValue} budget={budget} projTotal={projTotal} onReset={reset} />
+          <Navbar squadValue={squadValue} budget={budget} projTotal={projTotal} jornada={jornada} onReset={reset} canInstall={canInstall} onInstall={install} live={live} />
+          <MarketCloseBanner jornada={jornada} notifyOn={notifyOn} onToggleNotify={toggleNotify} onTest={() => notify('Prueba de aviso', 'Así te avisaré antes del cierre de mercado.')} />
+          <TabBar tab={tab} setTab={setTab} alerts={tabAlerts} />
+
           <main className="max-w-7xl mx-auto px-4 py-5 space-y-5">
-            <UploadZone onAnalyzed={onAnalyzed} />
+            {tab === 'hacker' && (
+              <>
+                <UploadZone onAnalyzed={onAnalyzed} toast={toast} />
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-5 items-start">
+                  <div className="space-y-5 order-2 lg:order-1 min-w-0">
+                    <Pitch squad={squad} formation={formation} setFormation={setFormation} captainId={captainId}
+                      onSelect={openPlayer} onEmpty={(pos) => setSheet({ mode: 'add', pos })} projTotal={projTotal} onAuto={autoAlign} />
+                    <ClauseCalculator squad={squad} rivals={rivals} setRivals={setRivals} playerId={clausePlayerId || squad[0]?.id} setPlayerId={setClausePlayerId} />
+                  </div>
+                  <div className="space-y-5 order-1 lg:order-2 min-w-0">
+                    <HackerFeed hacks={hacks} onExecute={executeHack} lookup={lookup} />
+                  </div>
+                </div>
+                <RecommendationCards cards={cards} />
+              </>
+            )}
+            {tab === 'mercado' && (
+              <MarketTab squad={squad} market={market} budget={budget} holes={holes} watch={watch} toggleWatch={toggleWatch}
+                live={live} setLive={setLive} actions={actions} onImport={onImport} flashes={flashes} openPlayer={openPlayer} toast={toast} />
+            )}
+            {tab === 'liga' && <LeagueTab standings={standings} rivals={rivals} squad={squad} bids={bids} onProtect={protect} />}
+            {tab === 'jornada' && <MatchdayTab jornada={jornada} projTotal={projTotal} result={result} onSimulate={simulate} onApply={applyMatchday} history={history} />}
 
-            <div className="grid lg:grid-cols-[1.05fr_1fr] gap-5 items-start">
-              <div className="space-y-5 order-2 lg:order-1">
-                <Pitch squad={squad} selectedId={selectedId} onSelect={setSelectedId} projTotal={projTotal} />
-                <ClauseCalculator squad={squad} rivals={rivals} setRivals={setRivals} />
-              </div>
-              <div className="space-y-5 order-1 lg:order-2">
-                <HackerFeed hacks={hacks} onExecute={executeHack} squadMap={squadMap} marketMap={marketMap} />
-              </div>
-            </div>
-
-            <RecommendationCards cards={cards} />
-
-            <footer className="text-center text-[11px] text-slate-600 font-mono py-6">
-              FANTASY HACKER · Datos de prueba con fines de demostración · Proyecciones generadas por el motor local de IA
+            <footer className="text-center text-[11px] text-slate-600 font-mono py-6 leading-relaxed">
+              FANTASY HACKER · Datos de prueba con fines de demostración · Proyecciones del motor local de IA<br />
+              Instálala en el móvil desde el menú del navegador → «Añadir a pantalla de inicio»
             </footer>
           </main>
 
-          <ReplaceSheet player={selected} squad={squad} market={market} budget={budget}
-            onClose={() => setSelectedId(null)} onBuy={buyReplacement} onBenchSwap={benchSwap} />
+          <PlayerSheet sheet={sheet} squad={squad} market={market} budget={budget} captainId={captainId} onClose={() => setSheet(null)} actions={actions} />
           <Toasts toasts={toasts} />
         </>
       );
