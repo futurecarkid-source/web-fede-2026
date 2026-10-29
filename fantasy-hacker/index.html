@@ -239,7 +239,12 @@
       }
       return map;
     }
+    const REAL_FIX = { map: null }; // calendario real de LaLiga Fantasy (si estás conectado)
     function nextOf(p) {
+      if (REAL_FIX.map) {
+        const f = REAL_FIX.map[p.team];
+        if (f) return { rival: f.rival, code: f.rivalCode, diff: clamp((TEAMS[f.rivalCode]?.str ?? 3) + (f.home ? 0 : 1), 1, 5), home: f.home, date: f.date };
+      }
       if (FIX_CACHE.round !== ROUND.current) FIX_CACHE = { round: ROUND.current, map: fixturesFor(ROUND.current) };
       const f = FIX_CACHE.map[p.team];
       if (!f) return { rival: 'Por confirmar', code: null, diff: 3, home: true };
@@ -375,6 +380,7 @@
       { id: 'b5', j: 9, who: 'Tú', type: 'compra', player: 'Ante Budimir', amount: 11.8 },
     ];
 
+    const rivalSquad = (r) => (r.squad && r.squad.length ? r.squad : (r.squadIds || []).map((id) => DB[id]).filter(Boolean));
     const INITIAL_BUDGET = 22.0;
     const INITIAL_POINTS = 597;
     const FORMATIONS = {
@@ -407,7 +413,8 @@
       const base = 0.45 * p.avg + 0.55 * formAvg(p);
       const m = p.last.minutes;
       const minutesFactor = m >= 70 ? 1.05 : m >= 46 ? 0.9 : m > 0 ? 0.8 : 0.85;
-      return r1(base * DIFF_MULT[n.diff] * (HEALTH_MULT[p.health] ?? 1) * minutesFactor);
+      const role = p.probable === 'suplente' ? 0.45 : p.probable === 'titular' ? 1.05 : 1;
+      return r1(base * DIFF_MULT[n.diff] * (HEALTH_MULT[p.health] ?? 1) * minutesFactor * role);
     }
 
     function autoLineup(squad, formation) {
@@ -458,6 +465,7 @@
       if (formAvg(p) >= 6.5) r.push(`lleva una racha oculta de ${formAvg(p).toFixed(1)} pts de media en las últimas 5`);
       if (n.diff <= 2) r.push(`su equipo (${teamOf(p.team).name}) ${n.home ? 'recibe' : 'visita'} a ${n.rival}, un rival débil (dificultad ${n.diff}/5)`);
       if (p.trend > 0) r.push(`su precio va a subir un ${p.trend}% esta semana`);
+      if (p.probable === 'titular') r.push('las alineaciones probables le dan como titular');
       return r;
     }
     function describeBad(p) {
@@ -470,6 +478,8 @@
       if (formAvg(p) < 3) r.push(`promedia solo ${formAvg(p).toFixed(1)} pts en las últimas 5 jornadas`);
       if (n.diff >= 4) r.push(`le toca contra ${n.rival}, de los rivales más duros (dificultad ${n.diff}/5)`);
       if (p.trend < 0) r.push(`su precio caerá un ${Math.abs(p.trend)}% si no lo vendes ya`);
+      if (p.probable === 'suplente') r.push('las alineaciones probables le dejan en el banquillo');
+      if (p.news && p.health !== 'ok') r.push(`la última noticia dice: «${p.news}»`);
       return r;
     }
 
@@ -595,7 +605,7 @@
       }).sort((a, b) => b.total - a.total);
       const mine = rows.reduce((s, r) => s + r.total, 0);
       const rivalRows = rivals.map((r) => {
-        const sq = r.squadIds.map((id) => DB[id]).filter(Boolean);
+        const sq = rivalSquad(r);
         const pts = sq.map((p) => simPoints(p).pts);
         const best = Math.max(0, ...pts);
         return { id: r.id, name: r.name, pts: pts.reduce((s, x) => s + x, 0) + best };
@@ -759,6 +769,284 @@
       throw lastErr || new Error('No se pudo contactar con Gemini');
     }
 
+    /* =====================================================
+       CONEXIÓN REAL CON LALIGA FANTASY (vía tu Worker)
+    ===================================================== */
+    const LF_CMP = '/v1/competition/1';
+    const LF_POS = { 1: 'POR', 2: 'DEF', 3: 'MED', 4: 'DEL' };
+    const LF_STATUS = { ok: 'ok', injured: 'lesionado', doubtful: 'duda', suspended: 'sancionado', out_of_league: 'lesionado', not_available: 'lesionado' };
+    const lfArr = (x) => {
+      if (Array.isArray(x)) return x;
+      if (!x || typeof x !== 'object') return [];
+      for (const k of ['elements', 'data', 'items', 'leagues', 'players', 'matches', 'teams', 'results']) {
+        if (Array.isArray(x[k])) return x[k];
+        if (x[k] && typeof x[k] === 'object') { const inner = lfArr(x[k]); if (inner.length) return inner; }
+      }
+      return [];
+    };
+    const loadConn = () => { try { return JSON.parse(localStorage.getItem('fh-lf') || 'null'); } catch (e) { return null; } };
+    const saveConn = (c) => { try { c ? localStorage.setItem('fh-lf', JSON.stringify(c)) : localStorage.removeItem('fh-lf'); } catch (e) { /* sin almacenamiento */ } };
+    const proxyBase = (c) => String(c.proxy || '').trim().replace(/\/+$/, '');
+    const tokensToConn = (j) => ({
+      token: j.id_token || j.access_token,
+      refresh: j.refresh_token || null,
+      exp: Date.now() + ((Number(j.expires_in) || 3600) - 120) * 1000,
+    });
+
+    async function lfPost(conn, path, body) {
+      const res = await fetch(proxyBase(conn) + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || 'HTTP ' + res.status);
+      return j;
+    }
+    async function lfLogin(proxy, email, password) {
+      return { proxy, ...tokensToConn(await lfPost({ proxy }, '/login', { email, password })) };
+    }
+    // Petición GET autenticada; renueva el token si caduca. onConn guarda los tokens nuevos.
+    async function lfGet(connRef, path, onConn) {
+      const doFetch = () => fetch(proxyBase(connRef.current) + '/api' + path, { headers: { Authorization: 'Bearer ' + connRef.current.token } });
+      const refresh = async () => {
+        if (!connRef.current.refresh) throw new Error('Sesión caducada: vuelve a conectarte');
+        const j = await lfPost(connRef.current, '/refresh', { refresh_token: connRef.current.refresh });
+        connRef.current = { ...connRef.current, ...tokensToConn(j), refresh: j.refresh_token || connRef.current.refresh };
+        onConn(connRef.current);
+      };
+      if (connRef.current.exp && Date.now() > connRef.current.exp && connRef.current.refresh) await refresh();
+      let res = await doFetch();
+      if (res.status === 401 && connRef.current.refresh) { await refresh(); res = await doFetch(); }
+      if (!res.ok) throw new Error(`${path.split('?')[0]} → HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // Instantáneas diarias de precios para calcular tendencias reales
+    function updateSnapshots(players) {
+      let snaps = {};
+      try { snaps = JSON.parse(localStorage.getItem('fh-snaps') || '{}'); } catch (e) { snaps = {}; }
+      const today = new Date().toISOString().slice(0, 10);
+      snaps[today] = snaps[today] || {};
+      players.forEach((p) => { snaps[today][p.lfId] = p.price; });
+      const days = Object.keys(snaps).sort().slice(-14);
+      const kept = Object.fromEntries(days.map((d) => [d, snaps[d]]));
+      try { localStorage.setItem('fh-snaps', JSON.stringify(kept)); } catch (e) { /* sin almacenamiento */ }
+      return kept;
+    }
+    function applySnapshots(p, snaps) {
+      const days = Object.keys(snaps).sort();
+      const series = days.map((d) => snaps[d][p.lfId]).filter((v) => typeof v === 'number');
+      if (series.length >= 2) {
+        const prev = series[series.length - 2];
+        const trend = prev > 0 ? clamp(Math.round(((p.price - prev) / prev) * 100), -30, 30) : 0;
+        return { ...p, trend: p.trendKnown ? p.trend : trend, hist: series.slice(-7) };
+      }
+      return p;
+    }
+
+    function fromLF(pm, extra = {}) {
+      if (!pm) return null;
+      const pos = LF_POS[pm.positionId];
+      if (!pos) return null; // entrenadores y desconocidos
+      const avg = Number(pm.averagePoints) || (pm.points ? r1(pm.points / 10) : 3);
+      const teamName = pm.team?.name || pm.teamName || '';
+      return {
+        id: 'lf' + pm.id, lfId: String(pm.id), name: pm.name || pm.nickname || 'Jugador', short: pm.nickname || pm.name || 'Jugador',
+        team: teamCodeFromName(teamName), teamName, pos,
+        price: r2((Number(pm.marketValue) || 0) / 1e6), points: Number(pm.points) || 0, avg: r1(avg),
+        form: Array(5).fill(Math.round(avg)), health: LF_STATUS[pm.playerStatus] || 'ok', trend: 0,
+        img: pm.images?.transparent?.['256x256'] || pm.images?.big?.['256x256'] || null,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.5 },
+        ...extra,
+      };
+    }
+    // Completa forma, último partido y tendencia con la ficha detallada del jugador (si la API la da)
+    function enrichFromDetail(p, d) {
+      if (!d) return p;
+      const pm = d.playerMaster || d.player || d;
+      const stats = lfArr(pm.playerStats || d.playerStats).filter((s) => s && s.weekNumber != null).sort((a, b) => a.weekNumber - b.weekNumber);
+      const out = { ...p };
+      if (stats.length) {
+        const pts = stats.map((s) => Number(s.totalPoints) || 0);
+        const form = pts.slice(-5);
+        while (form.length < 5) form.unshift(Math.round(p.avg));
+        out.form = form;
+        const s = stats[stats.length - 1].stats || {};
+        const v = (k) => (Array.isArray(s[k]) ? Number(s[k][0]) || 0 : Number(s[k]) || 0);
+        const minutes = v('mins_played');
+        out.last = {
+          goals: v('goals'), assists: v('goal_assist'), minutes,
+          subbedAt: minutes > 0 && minutes < 85 ? minutes : null,
+          rating: minutes > 0 ? r1(clamp(5 + (Number(stats[stats.length - 1].totalPoints) || 0) * 0.3, 3, 9.9)) : 0,
+        };
+      }
+      const mv = lfArr(pm.marketValues || d.marketValues).map((m) => Number(m.marketValue) / 1e6).filter((x) => x > 0);
+      if (mv.length >= 2) {
+        out.hist = mv.slice(-7).map(r2);
+        const prev = mv[mv.length - 2], cur = mv[mv.length - 1];
+        out.trend = prev > 0 ? clamp(Math.round(((cur - prev) / prev) * 100 * 3), -30, 30) : 0;
+        out.trendKnown = true;
+      }
+      return out;
+    }
+    async function inBatches(items, size, fn) {
+      const out = [];
+      for (let i = 0; i < items.length; i += size) out.push(...await Promise.all(items.slice(i, i + size).map((x) => fn(x).catch(() => null))));
+      return out;
+    }
+
+    async function syncFantasy(connRef, onConn, wantedLeagueId, log) {
+      const get = (path) => lfGet(connRef, path, onConn);
+      log('> Leyendo tu perfil de LaLiga Fantasy…');
+      const me = await get('/v4/user/me?x-lang=es');
+      const myIds = [me?.id, me?.userId, me?.managerId, me?.user?.id].filter((x) => x != null).map(String);
+      const leagues = lfArr(await get(`${LF_CMP}/leagues?x-lang=es`)).map((l) => ({ id: String(l.id), name: l.name || 'Liga ' + l.id }));
+      if (!leagues.length) throw new Error('No estás en ninguna liga');
+      const league = leagues.find((l) => l.id === String(wantedLeagueId)) || leagues[0];
+      log(`> Liga: ${league.name}`);
+
+      const standing = lfArr(await get(`${LF_CMP}/leagues/${league.id}/standing?x-lang=es`));
+      const teamOfEntry = (e) => e.team || e;
+      const managerIds = (e) => [e.userId, e.team?.userId, e.team?.manager?.id, e.team?.manager?.userId, e.manager?.id].filter((x) => x != null).map(String);
+      const mine = standing.find((e) => managerIds(e).some((id) => myIds.includes(id))) || standing[0];
+      const myTeamId = teamOfEntry(mine)?.id;
+      if (!myTeamId) throw new Error('No encuentro tu equipo en la liga');
+
+      log('> Descargando tu plantilla y tu dinero…');
+      const teamData = await get(`${LF_CMP}/leagues/${league.id}/teams/${myTeamId}?x-lang=es`);
+      const teamPlayers = lfArr(teamData.players || teamData.team?.players || teamData);
+      let money = null;
+      try { const m = await get(`${LF_CMP}/teams/${myTeamId}/money?x-lang=es`); money = Number(m.teamMoney ?? m.amount ?? m.money ?? m); } catch (e) { /* opcional */ }
+
+      log('> Leyendo el mercado de tu liga…');
+      const marketRaw = lfArr(await get(`${LF_CMP}/league/${league.id}/market?x-lang=es`));
+
+      let week = null;
+      try { const w = await get(`${LF_CMP}/week/current?x-lang=es`); week = Number(w.weekNumber ?? w.week ?? w.number ?? w); } catch (e) { /* opcional */ }
+      let fixtures = null;
+      if (week) {
+        log(`> Calendario real de la jornada ${week}…`);
+        try {
+          const cal = lfArr(await get(`${LF_CMP}/calendar?weekNumber=${week}&x-lang=es`));
+          fixtures = {};
+          cal.forEach((m) => {
+            const ln = m.local?.name || m.localTeam?.name || m.home?.name || m.localName;
+            const vn = m.visitor?.name || m.visitorTeam?.name || m.away?.name || m.visitorName;
+            if (!ln || !vn) return;
+            const lc = teamCodeFromName(ln), vc = teamCodeFromName(vn);
+            const date = m.date || m.matchDate || m.startDate || null;
+            const score = m.localScore != null && m.visitorScore != null ? `${m.localScore}-${m.visitorScore}` : null;
+            fixtures[lc] = { rival: vn, rivalCode: vc, home: true, date, score };
+            fixtures[vc] = { rival: ln, rivalCode: lc, home: false, date, score };
+          });
+          if (!Object.keys(fixtures).length) fixtures = null;
+        } catch (e) { log('> Calendario no disponible, uso el generado'); }
+      }
+
+      const squadBase = teamPlayers.map((tp) => fromLF(tp.playerMaster || tp, { clause: tp.buyoutClause ? tp.buyoutClause / 1e6 : null })).filter(Boolean);
+      const marketBase = marketRaw.map((it) => {
+        const p = fromLF(it.playerMaster, { salePrice: it.salePrice ? it.salePrice / 1e6 : null, seller: it.sellerTeam?.manager?.managerName || it.ownerName || null, expires: it.expirationDate || null, bids: it.numberOfBids || 0 });
+        return p && it.salePrice ? { ...p, price: r2(it.salePrice / 1e6), marketValue: p.price } : p;
+      }).filter(Boolean);
+
+      log(`> Analizando ${squadBase.length + marketBase.length} jugadores (forma, minutos, goles)…`);
+      const detail = (p) => get(`${LF_CMP}/player/${p.lfId}/league/${league.id}?x-lang=es`).then((d) => enrichFromDetail(p, d));
+      const squadRich = (await inBatches(squadBase, 6, detail)).map((p, i) => p || squadBase[i]);
+      const marketRich = (await inBatches(marketBase, 6, detail)).map((p, i) => p || marketBase[i]);
+      const snaps = updateSnapshots([...squadRich, ...marketRich]);
+      const squad = squadRich.map((p) => applySnapshots(p, snaps));
+      const market = marketRich.map((p) => applySnapshots(p, snaps));
+
+      log('> Espiando las plantillas de tus rivales…');
+      const others = standing.filter((e) => String(teamOfEntry(e)?.id) !== String(myTeamId));
+      const rivals = await inBatches(others, 4, async (e) => {
+        const t = teamOfEntry(e);
+        let sq = [];
+        try { const td = await get(`${LF_CMP}/leagues/${league.id}/teams/${t.id}?x-lang=es`); sq = lfArr(td.players || td.team?.players || td).map((tp) => fromLF(tp.playerMaster || tp)).filter(Boolean); } catch (err) { /* plantilla privada */ }
+        const money = Number(t.teamMoney ?? e.teamMoney);
+        return {
+          id: 'lf' + t.id, name: t.name || t.manager?.managerName || e.manager || 'Rival',
+          manager: t.manager?.managerName || (typeof e.manager === 'string' ? e.manager : null),
+          points: Number(e.points ?? t.points ?? t.teamPoints) || 0, last: Number(e.weekPoints ?? t.weekPoints) || 0,
+          budget: money > 0 ? r1(money / 1e6) : 0, budgetUnknown: !(money > 0), squad: sq, squadIds: [],
+        };
+      });
+
+      let bids = [];
+      try {
+        const act = lfArr(await get(`${LF_CMP}/leagues/${league.id}/activity/0?x-lang=es`));
+        bids = act.map((a, i) => {
+          const player = a.playerMaster?.nickname || a.playerMaster?.name || a.playerName;
+          if (!player) return null;
+          const who = a.user1Name || a.userName || a.managerName || a.user1?.managerName || 'Liga';
+          const txt = norm(a.title || a.description || a.msg || a.activityType || '');
+          const type = /vend|sell|venta/.test(txt) ? 'venta' : /puj|bid|oferta/.test(txt) ? 'puja' : 'compra';
+          return { id: 'act' + i, j: week || 0, who, type, player, amount: r1((Number(a.amount) || 0) / 1e6) };
+        }).filter(Boolean).slice(0, 60);
+      } catch (e) { /* opcional */ }
+
+      log('> Sincronización completada ✔');
+      return {
+        leagues, leagueId: league.id, leagueName: league.name, myTeamId: String(myTeamId), squad, market,
+        budget: money != null && !isNaN(money) ? r1(money / 1e6) : null, rivals: rivals.filter(Boolean), bids, week, fixtures,
+        myPoints: Number(mine?.points ?? teamOfEntry(mine)?.points) || 0, myLast: Number(mine?.weekPoints ?? teamOfEntry(mine)?.weekPoints) || 0,
+        syncedAt: Date.now(),
+      };
+    }
+
+    /* Investigación con Gemini + Google Search: noticias, lesiones y alineaciones probables */
+    async function geminiResearch(apiKey, squad, jornada, log = () => {}) {
+      const starters = squad.filter((p) => p.starter);
+      const list = (starters.length ? starters : squad).map((p) => {
+        const n = nextOf(p);
+        return `- ${p.name} (${p.teamName || teamOf(p.team).name}, ${POS_LABEL[p.pos]}) — próximo partido: ${n.home ? 'en casa contra' : 'fuera contra'} ${n.rival}`;
+      }).join('\n');
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const prompt = `Hoy es ${today}. Eres el analista de mi equipo de LaLiga Fantasy para la jornada ${jornada} de LaLiga EA Sports.\n` +
+        `Busca en internet la información MÁS RECIENTE (alineaciones probables de futbolfantasy.com, jornadaperfecta.com, Marca, AS, Relevo, partes médicos de los clubes, sanciones) sobre estos jugadores:\n${list}\n\n` +
+        `Para cada jugador indica si será titular, duda, suplente, lesionado o sancionado, con una nota breve y concreta (fuente y dato clave). ` +
+        `Añade también 3-5 consejos accionables para la jornada (capitán, a quién vender, rivales débiles, jugadores del mercado en racha).\n` +
+        `Responde SOLO con un JSON válido, sin texto antes ni después, con esta forma exacta:\n` +
+        `{"resumen":"...","jugadores":[{"nombre":"...","estado":"titular|duda|suplente|lesionado|sancionado","nota":"..."}],"consejos":["..."]}`;
+      const body = JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        tools: [{ google_search: {} }],
+        generationConfig: { temperature: 0.2 },
+      });
+      let lastErr = null;
+      for (const model of GEMINI_MODELS) {
+        log(`> Gemini (${model}) está buscando en internet…`);
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey }, body,
+        });
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try { const e = await res.json(); msg = e.error?.message || msg; } catch (e) { /* sin cuerpo */ }
+          if (res.status === 400 && /api key/i.test(msg)) throw new Error('API key de Gemini inválida');
+          if (res.status === 429) throw new Error('Límite gratuito de Gemini alcanzado. Espera un minuto.');
+          lastErr = new Error(`${model}: ${msg}`);
+          continue;
+        }
+        const data = await res.json();
+        const cand = data.candidates?.[0];
+        const text = (cand?.content?.parts || []).map((p) => p.text || '').join('');
+        const m = text.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error('Gemini no devolvió un informe válido');
+        const parsed = JSON.parse(m[0]);
+        const sources = (cand?.groundingMetadata?.groundingChunks || []).map((c) => c.web).filter(Boolean)
+          .filter((w, i, a) => a.findIndex((x) => x.uri === w.uri) === i).slice(0, 8);
+        return { ...parsed, sources, at: Date.now(), model };
+      }
+      throw lastErr || new Error('No se pudo contactar con Gemini');
+    }
+    function applyResearch(squad, report) {
+      const items = report?.jugadores || [];
+      return squad.map((p) => {
+        const hit = items.find((it) => { const n = norm(it.nombre); return n && (n === norm(p.name) || n.includes(norm(p.short)) || norm(p.name).includes(n)); });
+        if (!hit) return p;
+        const estado = norm(hit.estado);
+        const health = estado.includes('lesion') ? 'lesionado' : estado.includes('sancion') ? 'sancionado' : estado.includes('duda') ? 'duda' : p.health === 'lesionado' || p.health === 'sancionado' ? p.health : 'ok';
+        return { ...p, health, probable: estado.includes('suplente') ? 'suplente' : estado.includes('titular') ? 'titular' : null, news: hit.nota || null };
+      });
+    }
+
     /* Importación de datos externos (JSON propio o de una API) */
     function normalizePlayer(raw, i) {
       const avg = Number(raw.avg) || (raw.points ? r1(raw.points / 10) : 4);
@@ -918,7 +1206,7 @@
     /* =====================================================
        NAVBAR, PESTAÑAS Y BANNER DE CIERRE
     ===================================================== */
-    function Navbar({ squadValue, budget, projTotal, jornada, onReset, canInstall, onInstall, live }) {
+    function Navbar({ real, squadValue, budget, projTotal, jornada, onReset, canInstall, onInstall, live }) {
       return (
         <header className="sticky top-0 z-40 border-b border-white/10 bg-void/85 backdrop-blur-md">
           <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
@@ -932,7 +1220,7 @@
                   <span className="text-hack glow-text-purple">HACKER</span>
                 </h1>
                 <p className="font-mono text-[10px] text-slate-500 tracking-widest mt-0.5 flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full pulse-dot ${live ? 'bg-danger' : 'bg-neon'}`} /> {live ? 'MERCADO EN VIVO' : 'IA ONLINE'} · JORNADA {jornada}
+                  <span className={`w-1.5 h-1.5 rounded-full pulse-dot ${live ? 'bg-danger' : 'bg-neon'}`} /> {real ? 'LIGA REAL' : 'MODO DEMO'}{live ? ' · EN VIVO' : ''} · JORNADA {jornada}
                 </p>
               </div>
             </div>
@@ -1427,7 +1715,8 @@
         <Sheet onClose={onClose}>
           <div className="flex items-center gap-2 flex-wrap"><PosTag pos={player.pos} /><HealthDot health={player.health} /><span className={`text-xs ${HEALTH_INFO[player.health].cls}`}>{HEALTH_INFO[player.health].label}</span>{player.starter ? <span className="text-[10px] font-mono text-neon">TITULAR</span> : <span className="text-[10px] font-mono text-slate-400">SUPLENTE</span>}</div>
           <h3 className="font-display font-bold text-lg text-white mt-1 pr-8">{player.name}{isCap && <span className="text-hack"> ©</span>}</h3>
-          <p className="text-xs text-slate-400">{teamOf(player.team).name} · {n.home ? 'vs' : '@'} {n.rival} (dif. {n.diff}/5) · {fmtM(player.price)}</p>
+          <p className="text-xs text-slate-400">{player.teamName || teamOf(player.team).name} · {n.home ? 'vs' : '@'} {n.rival} (dif. {n.diff}/5){n.date ? ' · ' + new Date(n.date).toLocaleString('es-ES', { weekday: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''} · {fmtM(player.price)}</p>
+          {player.news && <p className="text-xs text-hack mt-1">📰 {player.news}</p>}
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
             <Kpi label="Proyección" value={`${base} pts`} />
             <Kpi label="Media" value={player.avg.toFixed(1)} />
@@ -1609,9 +1898,144 @@
     }
 
     /* =====================================================
+       PANEL: CONEXIÓN CON LALIGA FANTASY
+    ===================================================== */
+    function ConnectPanel({ conn, meta, syncing, log, onConnect, onSync, onDisconnect, onLeague }) {
+      const [proxy, setProxy] = useState(conn?.proxy || (() => { try { return localStorage.getItem('fh-proxy') || ''; } catch (e) { return ''; } })());
+      const [method, setMethod] = useState('login');
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [token, setToken] = useState('');
+      const [open, setOpen] = useState(!conn);
+      const connected = !!conn?.token;
+      const ago = meta?.syncedAt ? Math.round((Date.now() - meta.syncedAt) / 60000) : null;
+      return (
+        <section className={`card p-4 sm:p-5 ${connected ? 'glow-green' : 'glow-purple'}`}>
+          <SectionTitle icon="live" tone={connected ? 'text-neon' : 'text-hack'}
+            right={connected
+              ? <span className="font-mono text-[11px] text-neon border border-neon/40 rounded-full px-2 py-0.5">● DATOS REALES</span>
+              : <span className="font-mono text-[11px] text-warn border border-warn/40 rounded-full px-2 py-0.5">MODO DEMO</span>}>
+            LALIGA FANTASY
+          </SectionTitle>
+
+          {connected ? (
+            <div className="-mt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {meta?.leagues?.length > 1 ? (
+                  <select value={meta.leagueId} onChange={(e) => onLeague(e.target.value)} className="field max-w-xs">
+                    {meta.leagues.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                ) : <span className="text-sm text-white font-semibold">{meta?.leagueName || 'Conectado'}</span>}
+                <span className="text-xs text-slate-400">{ago == null ? 'Sin sincronizar' : ago < 1 ? 'Actualizado ahora mismo' : `Actualizado hace ${ago} min`}{meta?.week ? ` · Jornada ${meta.week}` : ''}</span>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button onClick={onSync} disabled={syncing} className="btn-neon rounded-xl px-4 py-2 text-xs">{syncing ? 'Sincronizando…' : '↻ Sincronizar ahora'}</button>
+                <button onClick={onDisconnect} disabled={syncing} className="btn-ghost rounded-xl px-4 py-2 text-xs">Desconectar</button>
+              </div>
+            </div>
+          ) : (
+            <div className="-mt-1">
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Conecta tu cuenta y la app leerá tu plantilla, tu dinero, el mercado de tu liga, la clasificación, las plantillas rivales y el calendario real de la jornada. Solo lectura: nunca puja ni vende por ti.
+              </p>
+              {!open && <button onClick={() => setOpen(true)} className="btn-hack rounded-xl px-4 py-2 text-xs mt-3">Conectar mi cuenta</button>}
+              {open && (
+                <div className="mt-3 space-y-2">
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">URL de tu puente (Cloudflare Worker)</span>
+                    <input value={proxy} onChange={(e) => setProxy(e.target.value)} placeholder="https://fantasy-hacker.tu-usuario.workers.dev" className="field mt-1 font-mono text-xs" />
+                  </label>
+                  <div className="grid grid-cols-2 p-1 rounded-xl bg-black/40 border border-white/10 text-xs font-semibold">
+                    {[['login', 'Email y contraseña'], ['token', 'Pegar token']].map(([k, l]) => (
+                      <button key={k} onClick={() => setMethod(k)} className={`px-3 py-2 rounded-lg ${method === k ? 'bg-hack/30 text-white' : 'text-slate-400'}`}>{l}</button>
+                    ))}
+                  </div>
+                  {method === 'login' ? (
+                    <>
+                      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="username" placeholder="Email de LaLiga Fantasy" className="field" />
+                      <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" autoComplete="current-password" placeholder="Contraseña" className="field" />
+                      <p className="text-[11px] text-slate-500">La contraseña viaja solo a tu Worker y de ahí a LaLiga para iniciar sesión. No se guarda en ningún sitio. Si entras con Google/Apple, usa «Pegar token».</p>
+                    </>
+                  ) : (
+                    <>
+                      <textarea value={token} onChange={(e) => setToken(e.target.value)} rows={3} placeholder="eyJhbGciOi… (token Bearer de tu sesión)" className="field font-mono text-xs" />
+                      <p className="text-[11px] text-slate-500">El token caduca en unas 24 h; tendrás que pegar uno nuevo cuando caduque.</p>
+                    </>
+                  )}
+                  <button disabled={syncing || !proxy.trim() || (method === 'login' ? !email || !password : !token.trim())}
+                    onClick={() => { try { localStorage.setItem('fh-proxy', proxy.trim()); } catch (e) { /* sin almacenamiento */ } onConnect({ proxy: proxy.trim(), method, email, password, token: token.trim() }); setPassword(''); }}
+                    className="btn-neon rounded-xl px-4 py-2.5 text-sm w-full">{syncing ? 'Conectando…' : 'Conectar y sincronizar'}</button>
+                  <details>
+                    <summary className="text-xs text-slate-400 cursor-pointer">¿Cómo creo mi puente gratis? (5 minutos, una sola vez)</summary>
+                    <ol className="text-[11px] text-slate-400 mt-2 space-y-1 list-decimal pl-4 leading-relaxed">
+                      <li>Crea una cuenta gratis en <a className="text-neon underline" href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener">dash.cloudflare.com</a>.</li>
+                      <li>Ve a <b>Workers & Pages → Create → Create Worker</b>, ponle de nombre <code>fantasy-hacker</code> y pulsa <b>Deploy</b>.</li>
+                      <li>Pulsa <b>Edit code</b>, borra todo y pega el contenido de <a className="text-neon underline" href="https://github.com/futurecarkid-source/web-fede-2026/blob/claude/fantasy-hacker-web-app-e50zqc/fantasy-hacker/worker/proxy.js" target="_blank" rel="noopener">worker/proxy.js</a>. Pulsa <b>Deploy</b>.</li>
+                      <li>Copia la URL que te da (acaba en <code>.workers.dev</code>) y pégala arriba.</li>
+                    </ol>
+                  </details>
+                </div>
+              )}
+            </div>
+          )}
+          {log.length > 0 && (
+            <div className="mt-3 rounded-xl bg-black/60 border border-neon/20 p-2.5 font-mono text-[11px] text-neon/90 max-h-[140px] overflow-auto">
+              {log.map((l, i) => <p key={i} className={l.startsWith('✖') ? 'text-danger' : ''}>{l}</p>)}
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    /* =====================================================
+       PANEL: INVESTIGACIÓN IA (GEMINI + GOOGLE SEARCH)
+    ===================================================== */
+    function ResearchPanel({ report, busy, onRun }) {
+      const [key, setKey] = useState(loadKey);
+      const has = !!key.trim();
+      const tone = (e) => { const n = norm(e); return n.includes('titular') ? 'text-neon' : n.includes('duda') ? 'text-warn' : n.includes('suplente') ? 'text-slate-400' : 'text-danger'; };
+      return (
+        <section className="card-purple p-4 sm:p-5">
+          <SectionTitle icon="eye" tone="text-hack"
+            right={<button onClick={() => { storeKey(key.trim(), true); onRun(key.trim()); }} disabled={busy || !has} className="btn-hack rounded-lg px-3 py-1.5 text-xs">{busy ? 'Investigando…' : report ? '↻ Investigar de nuevo' : '🔎 Investigar jornada'}</button>}>
+            INVESTIGACIÓN IA
+          </SectionTitle>
+          <p className="text-xs text-slate-400 -mt-2 leading-relaxed">Gemini navega por internet (alineaciones probables, partes médicos, sanciones, prensa) y actualiza el estado de tus titulares para que el feed te dé órdenes con información real.</p>
+          {!has && (
+            <input value={key} onChange={(e) => setKey(e.target.value)} type="password" placeholder="API key de Gemini (AIza…), gratis en aistudio.google.com/apikey" className="field mt-3 font-mono text-xs" />
+          )}
+          {report && (
+            <div className="mt-4 fade-in">
+              {report.resumen && <p className="text-sm text-slate-200 leading-relaxed">{report.resumen}</p>}
+              <div className="grid sm:grid-cols-2 gap-1.5 mt-3">
+                {(report.jugadores || []).map((j, i) => (
+                  <div key={i} className="rounded-lg bg-black/40 border border-white/5 px-2.5 py-2">
+                    <div className="flex items-center justify-between gap-2"><span className="text-sm font-semibold text-white truncate">{j.nombre}</span><span className={`font-mono text-[10px] uppercase ${tone(j.estado)}`}>{j.estado}</span></div>
+                    {j.nota && <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{j.nota}</p>}
+                  </div>
+                ))}
+              </div>
+              {(report.consejos || []).length > 0 && (
+                <ul className="mt-3 space-y-1">
+                  {report.consejos.map((c, i) => <li key={i} className="text-xs text-slate-200 flex gap-2"><span className="text-neon">⚡</span>{c}</li>)}
+                </ul>
+              )}
+              {(report.sources || []).length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {report.sources.map((s, i) => <a key={i} href={s.uri} target="_blank" rel="noopener" className="text-[10px] font-mono text-hack border border-hack/40 rounded px-1.5 py-0.5 hover:text-white">{s.title || 'fuente'}</a>)}
+                </div>
+              )}
+              <p className="text-[10px] text-slate-500 mt-2 font-mono">Informe de {new Date(report.at).toLocaleString('es-ES', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · {report.model}</p>
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    /* =====================================================
        PESTAÑA MERCADO: PRECIOS, EN VIVO, ALERTAS, IMPORTAR
     ===================================================== */
-    function MarketTab({ squad, market, budget, holes, watch, toggleWatch, live, setLive, actions, onImport, flashes, openPlayer, toast }) {
+    function MarketTab({ squad, market, budget, holes, watch, toggleWatch, live, setLive, real, actions, onImport, flashes, openPlayer, toast }) {
       const [filter, setFilter] = useState('all');
       const [pos, setPos] = useState('ALL');
       const [q, setQ] = useState('');
@@ -1633,7 +2057,9 @@
               MERCADO EN DIRECTO
             </SectionTitle>
             <p className="text-xs text-slate-400 -mt-2 leading-relaxed">
-              {live
+              {real
+                ? (live ? 'Conectado a tu liga real: el mercado, tu plantilla y los precios se sincronizan con LaLiga Fantasy cada 5 minutos. Los vigilados (★) te avisan si cambian de precio.' : 'Estás conectado a tu liga real. Activa el directo para sincronizar el mercado cada 5 minutos.')
+                : live
                 ? 'Simulando las oscilaciones de precio del mercado cada pocos segundos según la tendencia de cada jugador. Los jugadores vigilados (★) te avisan cuando su precio se mueve.'
                 : 'Activa el directo para ver cómo se mueven los precios. Para datos reales, importa el JSON de tu liga o de una API en el panel de abajo.'}
             </p>
@@ -1788,7 +2214,7 @@
     function LeagueTab({ standings, rivals, squad, bids, onProtect }) {
       const [spyId, setSpyId] = useState(rivals[0]?.id);
       const spy = rivals.find((r) => r.id === spyId) || rivals[0];
-      const spySquad = spy ? spy.squadIds.map((id) => DB[id]).filter(Boolean) : [];
+      const spySquad = spy ? rivalSquad(spy) : [];
       const spyProj = spySquad.reduce((s, p) => s + projection(p), 0) + Math.max(0, ...spySquad.map(projection));
       const weak = [...spySquad].sort((a, b) => projection(a) - projection(b))[0];
       const star = [...spySquad].sort((a, b) => projection(b) - projection(a))[0];
@@ -1980,12 +2406,23 @@
       const [toasts, setToasts] = useState([]);
       const [flashes, setFlashes] = useState({});
       const [canInstall, setCanInstall] = useState(!!window.__fhInstall);
+      const [conn, setConn] = useState(loadConn);
+      const [lfMeta, setLfMeta] = useState(() => { try { return JSON.parse(localStorage.getItem('fh-lf-meta') || 'null'); } catch (e) { return null; } });
+      const [syncing, setSyncing] = useState(false);
+      const [lfLog, setLfLog] = useState([]);
+      const [report, setReport] = useState(() => { try { return JSON.parse(localStorage.getItem('fh-report') || 'null'); } catch (e) { return null; } });
+      const [researching, setResearching] = useState(false);
+      const connRef = useRef(conn);
+      const real = !!conn?.token;
 
       ROUND.current = jornada;
+      REAL_FIX.map = real ? lfMeta?.fixtures || null : null;
 
       useEffect(() => {
         saveState({ squad, market, budget, rivals, formation, captainId, jornada, myPoints, myLast, bids, history, watch, notifyOn });
       }, [squad, market, budget, rivals, formation, captainId, jornada, myPoints, myLast, bids, history, watch, notifyOn]);
+      useEffect(() => { try { lfMeta ? localStorage.setItem('fh-lf-meta', JSON.stringify(lfMeta)) : localStorage.removeItem('fh-lf-meta'); } catch (e) { /* sin almacenamiento */ } }, [lfMeta]);
+      useEffect(() => { try { report ? localStorage.setItem('fh-report', JSON.stringify(report)) : localStorage.removeItem('fh-report'); } catch (e) { /* sin almacenamiento */ } }, [report]);
       useEffect(() => { try { localStorage.setItem('fh-tab', tab); } catch (e) { /* sin almacenamiento */ } }, [tab]);
       useEffect(() => {
         const h = () => setCanInstall(true);
@@ -2005,7 +2442,7 @@
 
       // Refs para los intervalos
       const ref = useRef({});
-      ref.current = { squad, market, watch, notify };
+      ref.current = { ...ref.current, squad, market, watch, notify, captainId };
 
       const squadValue = useMemo(() => squad.reduce((s, p) => s + p.price, 0), [squad]);
       const projTotal = useMemo(() => {
@@ -2019,7 +2456,7 @@
       const holes = useMemo(() => holesOf(squad, formation), [squad, formation]);
       const standings = useMemo(() => [
         { id: 'me', name: 'Tú', points: myPoints, last: myLast, budget, value: squadValue },
-        ...rivals.map((r) => ({ id: r.id, name: r.name, points: r.points, last: r.last, budget: r.budget, value: r.squadIds.reduce((s, id) => s + (DB[id]?.price || 0), 0) })),
+        ...rivals.map((r) => ({ id: r.id, name: r.name, points: r.points, last: r.last, budget: r.budget, value: rivalSquad(r).reduce((s, p) => s + (p.price || 0), 0) })),
       ].sort((a, b) => b.points - a.points), [rivals, myPoints, myLast, budget, squadValue]);
 
       /* ---------- Acciones ---------- */
@@ -2145,9 +2582,85 @@
         setTimeout(() => document.getElementById('clausulas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
       };
 
-      /* ---------- Mercado en directo (simulado) ---------- */
+      /* ---------- LaLiga Fantasy: conexión y sincronización ---------- */
+      const onConn = (c) => { setConn(c); saveConn(c); };
+      const addLfLog = (l) => setLfLog((x) => [...x.slice(-40), l]);
+      const applySync = (d) => {
+        REAL_FIX.map = d.fixtures || null;
+        if (d.week) ROUND.current = d.week;
+        const { squad: cur, watch: w, notify: nt } = ref.current;
+        const merged = d.squad.map((p) => { const prev = cur.find((x) => x.id === p.id); return prev && prev.probable ? { ...p, probable: prev.probable, news: prev.news } : p; });
+        const next = autoLineup(merged, formation);
+        // Avisos de precio de los vigilados entre sincronizaciones
+        [...cur, ...ref.current.market].forEach((old) => {
+          if (!w.includes(old.id)) return;
+          const now = [...d.squad, ...d.market].find((x) => x.id === old.id);
+          if (now && old.price > 0) {
+            const pct = (now.price - old.price) / old.price;
+            if (Math.abs(pct) >= 0.01) nt(`${now.short} ${pct > 0 ? 'sube' : 'baja'} ${(Math.abs(pct) * 100).toFixed(1)}%`, `Ahora vale ${fmtM(now.price)} en tu liga.`);
+          }
+        });
+        setSquad(next);
+        setMarket(d.market);
+        if (d.budget != null) setBudget(d.budget);
+        if (d.rivals.length) setRivals(d.rivals);
+        if (d.bids.length) setBids(d.bids);
+        if (d.week) setJornada(d.week);
+        setMyPoints(d.myPoints); setMyLast(d.myLast);
+        if (!next.find((p) => p.id === ref.current.captainId && p.starter)) { const b = bestCaptain(next); setCaptainId(b ? b.id : null); }
+        setLfMeta({ leagues: d.leagues, leagueId: d.leagueId, leagueName: d.leagueName, myTeamId: d.myTeamId, week: d.week, fixtures: d.fixtures, syncedAt: d.syncedAt });
+      };
+      const runSync = async (leagueId) => {
+        if (!connRef.current?.token || ref.current.syncing) return;
+        ref.current.syncing = true; setSyncing(true); setLfLog([]);
+        try {
+          const d = await syncFantasy(connRef, onConn, leagueId ?? lfMeta?.leagueId, addLfLog);
+          applySync(d);
+          toast(`✔ Datos reales: ${d.squad.length} jugadores, ${d.market.length} en el mercado${d.week ? ', jornada ' + d.week : ''}`);
+        } catch (e) {
+          addLfLog('✖ ' + e.message); toast(e.message, 'error');
+        } finally { ref.current.syncing = false; setSyncing(false); }
+      };
+      const connectFantasy = async ({ proxy, method, email, password, token }) => {
+        setSyncing(true); setLfLog([]);
+        try {
+          addLfLog('> Comprobando tu puente…');
+          let c;
+          if (method === 'login') { addLfLog('> Iniciando sesión en LaLiga Fantasy…'); c = await lfLogin(proxy, email, password); }
+          else c = { proxy, token: token.replace(/^Bearer\s+/i, ''), refresh: null, exp: Date.now() + 23 * 3600 * 1000 };
+          connRef.current = c; onConn(c);
+          setSyncing(false);
+          await runSync();
+        } catch (e) {
+          addLfLog('✖ ' + e.message); toast('No se pudo conectar: ' + e.message, 'error'); setSyncing(false);
+        }
+      };
+      const disconnectFantasy = () => {
+        connRef.current = null; onConn(null); setLfMeta(null); REAL_FIX.map = null; setLfLog([]);
+        toast('Desconectado de LaLiga Fantasy. Los datos se quedan hasta que reinicies.');
+      };
+      const runResearch = async (key) => {
+        setResearching(true);
+        try {
+          const r = await geminiResearch(key, squad, jornada, () => {});
+          setReport(r);
+          setSquad((sq) => applyResearch(sq, r));
+          toast(`🔎 Investigación lista: ${(r.jugadores || []).length} jugadores revisados`);
+        } catch (e) { toast(e.message, 'error'); } finally { setResearching(false); }
+      };
+      // Al abrir la app, si estás conectado y los datos tienen más de 30 min, se sincroniza sola
+      useEffect(() => {
+        if (connRef.current?.token && (!lfMeta?.syncedAt || Date.now() - lfMeta.syncedAt > 30 * 60000)) runSync();
+      }, []);
+
+      /* ---------- Mercado en directo (real cada 5 min si estás conectado; simulado si no) ---------- */
       useEffect(() => {
         if (!live) return;
+        if (real) {
+          runSync();
+          const t = setInterval(() => runSync(), 5 * 60000);
+          return () => clearInterval(t);
+        }
         const t = setInterval(() => {
           const { squad: sq, market: mk, watch: w, notify: nt } = ref.current;
           const pool = [...sq, ...mk];
@@ -2173,7 +2686,7 @@
           setFlashes((f) => ({ ...f, ...fl }));
         }, 5000);
         return () => clearInterval(t);
-      }, [live]);
+      }, [live, real]);
 
       /* ---------- Avisos de cierre de mercado ---------- */
       const notified = useRef({});
@@ -2244,6 +2757,7 @@
         setSquad(INITIAL_SQUAD); setMarket(INITIAL_MARKET); setBudget(INITIAL_BUDGET); setRivals(INITIAL_RIVALS);
         setFormationState('4-3-3'); setCaptainId('s6'); setJornada(11); setMyPoints(INITIAL_POINTS); setMyLast(58);
         setBids(INITIAL_BIDS); setHistory([]); setResult(null); setSheet(null); setLive(false);
+        connRef.current = null; onConn(null); setLfMeta(null); REAL_FIX.map = null; setReport(null); setLfLog([]);
         toast('Datos de prueba restaurados');
       };
 
@@ -2251,13 +2765,14 @@
 
       return (
         <>
-          <Navbar squadValue={squadValue} budget={budget} projTotal={projTotal} jornada={jornada} onReset={reset} canInstall={canInstall} onInstall={install} live={live} />
+          <Navbar real={real} squadValue={squadValue} budget={budget} projTotal={projTotal} jornada={jornada} onReset={reset} canInstall={canInstall} onInstall={install} live={live} />
           <MarketCloseBanner jornada={jornada} notifyOn={notifyOn} onToggleNotify={toggleNotify} onTest={() => notify('Prueba de aviso', 'Así te avisaré antes del cierre de mercado.')} />
           <TabBar tab={tab} setTab={setTab} alerts={tabAlerts} />
 
           <main className="max-w-7xl mx-auto px-4 py-5 space-y-5">
             {tab === 'hacker' && (
               <>
+                <ConnectPanel conn={conn} meta={lfMeta} syncing={syncing} log={lfLog} onConnect={connectFantasy} onSync={() => runSync()} onDisconnect={disconnectFantasy} onLeague={(id) => runSync(id)} />
                 <UploadZone onAnalyzed={onAnalyzed} toast={toast} />
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-5 items-start">
                   <div className="space-y-5 order-2 lg:order-1 min-w-0">
@@ -2266,6 +2781,7 @@
                     <ClauseCalculator squad={squad} rivals={rivals} setRivals={setRivals} playerId={clausePlayerId || squad[0]?.id} setPlayerId={setClausePlayerId} />
                   </div>
                   <div className="space-y-5 order-1 lg:order-2 min-w-0">
+                    <ResearchPanel report={report} busy={researching} onRun={runResearch} />
                     <HackerFeed hacks={hacks} onExecute={executeHack} lookup={lookup} />
                   </div>
                 </div>
@@ -2274,7 +2790,7 @@
             )}
             {tab === 'mercado' && (
               <MarketTab squad={squad} market={market} budget={budget} holes={holes} watch={watch} toggleWatch={toggleWatch}
-                live={live} setLive={setLive} actions={actions} onImport={onImport} flashes={flashes} openPlayer={openPlayer} toast={toast} />
+                live={live} setLive={setLive} real={real} actions={actions} onImport={onImport} flashes={flashes} openPlayer={openPlayer} toast={toast} />
             )}
             {tab === 'liga' && <LeagueTab standings={standings} rivals={rivals} squad={squad} bids={bids} onProtect={protect} />}
             {tab === 'jornada' && <MatchdayTab jornada={jornada} projTotal={projTotal} result={result} onSimulate={simulate} onApply={applyMatchday} history={history} />}
