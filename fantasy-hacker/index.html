@@ -628,7 +628,7 @@
     }
 
     /* =====================================================
-       OCR REAL: TESSERACT.JS Y CLAUDE VISION
+       OCR REAL: TESSERACT.JS Y GEMINI VISION
     ===================================================== */
     function loadScript(src) {
       return new Promise((resolve, reject) => {
@@ -687,64 +687,76 @@
         last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.5 },
       };
     }
-    async function claudeVisionExtract(apiKey, dataUrl, mode) {
-      const small = await shrinkImage(dataUrl);
+    // Modelos de Gemini a probar en orden (si uno no existe para tu key, se usa el siguiente)
+    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'];
+    async function geminiVisionExtract(apiKey, dataUrl, mode, log = () => {}) {
+      const small = await shrinkImage(dataUrl, 2048);
       const [meta, b64] = small.split(',');
-      const mediaType = meta.match(/data:(.*?);/)[1];
+      const mimeType = meta.match(/data:(.*?);/)[1];
       const schema = {
-        type: 'object', additionalProperties: false, required: ['players', 'budget_millions'],
+        type: 'OBJECT',
         properties: {
-          budget_millions: { type: 'number' },
+          budget_millions: { type: 'NUMBER' },
           players: {
-            type: 'array',
+            type: 'ARRAY',
             items: {
-              type: 'object', additionalProperties: false,
-              required: ['name', 'team', 'position', 'price_millions', 'points'],
+              type: 'OBJECT',
               properties: {
-                name: { type: 'string' },
-                team: { type: 'string' },
-                position: { type: 'string', enum: ['POR', 'DEF', 'MED', 'DEL'] },
-                price_millions: { type: 'number' },
-                points: { type: 'number' },
+                name: { type: 'STRING' },
+                team: { type: 'STRING' },
+                position: { type: 'STRING', enum: ['POR', 'DEF', 'MED', 'DEL'] },
+                price_millions: { type: 'NUMBER' },
+                points: { type: 'NUMBER' },
               },
+              required: ['name', 'team', 'position', 'price_millions', 'points'],
             },
           },
         },
+        required: ['players', 'budget_millions'],
       };
+      const common = 'Lee con atención TODO el texto de la imagen, aunque esté pequeño, recortado o con iconos encima. ' +
+        'Los nombres pueden aparecer abreviados (por ejemplo "Vini Jr.", "Lamine", "J. Álvarez"): escribe el nombre más completo que reconozcas del jugador real de LaLiga. ' +
+        'Equipo: nombre del club de LaLiga (deducelo por el escudo, la camiseta o tu conocimiento del jugador si no aparece escrito). ' +
+        'Posición: POR (portero), DEF (defensa), MED (centrocampista) o DEL (delantero); si la app usa PT/DF/MC/DL u otras siglas, conviértelas. ' +
+        'Precio en millones de euros como número (por ejemplo "12.540.000" o "12,5M" -> 12.54). Puntos totales como número. Si un dato no se ve, pon 0. ';
       const prompt = mode === 'team'
-        ? 'Esta es una captura de mi plantilla en una app de fútbol fantasy (LaLiga Fantasy, Biwenger o similar). Extrae todos los jugadores visibles: nombre completo, equipo de LaLiga, posición (POR, DEF, MED o DEL), precio en millones de euros y puntos totales. Si un dato no se ve, pon 0. Si aparece el saldo o presupuesto disponible, ponlo en budget_millions; si no, 0.'
-        : 'Esta es una captura del mercado de fichajes de una app de fútbol fantasy (LaLiga Fantasy, Biwenger o similar). Extrae todos los jugadores en venta: nombre completo, equipo de LaLiga, posición (POR, DEF, MED o DEL), precio en millones de euros y puntos totales. Si un dato no se ve, pon 0. budget_millions: 0.';
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2026-10-21',
-          'anthropic-beta': 'server-side-fallback-2026-07-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-opus-5-5',
-          max_tokens: 16000,
-          output_config: { effort: 'low', format: { type: 'json_schema', schema } },
-          fallbacks: 'default',
-          messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
-            { type: 'text', text: prompt },
-          ] }],
-        }),
+        ? 'Esta es una captura de mi plantilla en una app de fútbol fantasy (LaLiga Fantasy, Biwenger, Comunio o similar). Extrae TODOS los jugadores de mi equipo (titulares y suplentes). ' + common + 'Si aparece el saldo, dinero o presupuesto disponible, ponlo en budget_millions; si no, 0.'
+        : 'Esta es una captura del mercado de fichajes de una app de fútbol fantasy (LaLiga Fantasy, Biwenger, Comunio o similar). Extrae TODOS los jugadores en venta. ' + common + 'budget_millions: 0.';
+      const body = JSON.stringify({
+        contents: [{ role: 'user', parts: [
+          { inline_data: { mime_type: mimeType, data: b64 } },
+          { text: prompt },
+        ] }],
+        generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.1 },
       });
-      if (!res.ok) {
-        let msg = `HTTP ${res.status}`;
-        try { const e = await res.json(); msg = e.error?.message || msg; } catch (e) { /* sin cuerpo */ }
-        throw new Error(res.status === 401 ? 'API key inválida' : msg);
+      let lastErr = null;
+      for (const model of GEMINI_MODELS) {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+          body,
+        });
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try { const e = await res.json(); msg = e.error?.message || msg; } catch (e) { /* sin cuerpo */ }
+          if (res.status === 400 && /api key/i.test(msg)) throw new Error('API key de Gemini inválida');
+          if (res.status === 403) throw new Error('La API key no tiene permiso para Gemini: ' + msg);
+          if (res.status === 429) throw new Error('Has superado el límite gratuito de Gemini. Espera un minuto y vuelve a probar.');
+          lastErr = new Error(`${model}: ${msg}`);
+          log(`> ${model} no disponible, probando otro modelo…`);
+          continue; // 404 u otro error del modelo: probamos el siguiente
+        }
+        const data = await res.json();
+        if (data.promptFeedback?.blockReason) throw new Error('Gemini bloqueó la imagen (' + data.promptFeedback.blockReason + ')');
+        const cand = data.candidates?.[0];
+        const text = (cand?.content?.parts || []).map((p) => p.text || '').join('');
+        if (!text) throw new Error('Gemini no devolvió datos (' + (cand?.finishReason || 'sin respuesta') + ')');
+        const parsed = JSON.parse(text);
+        log(`> Modelo usado: ${model}`);
+        const players = (parsed.players || []).filter((p) => p.name && p.name.trim()).map(playerFromExtraction);
+        return { players, budget: parsed.budget_millions || 0 };
       }
-      const data = await res.json();
-      if (data.stop_reason === 'refusal') throw new Error('Claude no pudo analizar esta imagen');
-      if (data.stop_reason === 'max_tokens') throw new Error('Respuesta incompleta, prueba con una captura más pequeña');
-      const text = data.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
-      const parsed = JSON.parse(text);
-      return { players: (parsed.players || []).map(playerFromExtraction), budget: parsed.budget_millions || 0 };
+      throw lastErr || new Error('No se pudo contactar con Gemini');
     }
 
     /* Importación de datos externos (JSON propio o de una API) */
@@ -799,12 +811,12 @@
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) { /* sin almacenamiento */ }
     }
     function loadKey() {
-      try { return sessionStorage.getItem('fh-key') || localStorage.getItem('fh-key') || ''; } catch (e) { return ''; }
+      try { return sessionStorage.getItem('fh-gemini-key') || localStorage.getItem('fh-gemini-key') || ''; } catch (e) { return ''; }
     }
     function storeKey(k, remember) {
       try {
-        sessionStorage.setItem('fh-key', k);
-        if (remember) localStorage.setItem('fh-key', k); else localStorage.removeItem('fh-key');
+        sessionStorage.setItem('fh-gemini-key', k);
+        if (remember) localStorage.setItem('fh-gemini-key', k); else localStorage.removeItem('fh-gemini-key');
       } catch (e) { /* sin almacenamiento */ }
     }
 
@@ -1003,7 +1015,7 @@
     }
 
     /* =====================================================
-       ZONA DE CARGA + OCR (DEMO / TESSERACT / CLAUDE)
+       ZONA DE CARGA + OCR (DEMO / TESSERACT / GEMINI)
     ===================================================== */
     const OCR_SCRIPTS = {
       team: ['> Cargando modelo de visión «HackerVision-v4»…', '> Preprocesando imagen: contraste +32%, desenfoque −0.8', '> Detectando bloques de texto… 47 regiones', '> Reconociendo dorsales y nombres… 14 jugadores', '> Cruzando con base de datos de LaLiga… 100% match', '> Leyendo precios, puntos y estado médico…', '> Alineación óptima calculada ✔'],
@@ -1012,19 +1024,19 @@
     const ENGINES = [
       { id: 'demo', label: 'Demo', desc: 'Simulación con captura de ejemplo' },
       { id: 'tesseract', label: 'OCR real', desc: 'Tesseract.js en tu navegador, gratis' },
-      { id: 'claude', label: 'Claude Vision', desc: 'IA de Anthropic, necesita API key' },
+      { id: 'gemini', label: 'Gemini Vision', desc: 'IA de Google, API key gratis' },
     ];
 
     function UploadZone({ onAnalyzed, toast }) {
       const [mode, setMode] = useState('team');
-      const [engine, setEngine] = useState(() => { try { return localStorage.getItem('fh-engine') || 'demo'; } catch (e) { return 'demo'; } });
+      const [engine, setEngine] = useState(() => { try { return (localStorage.getItem('fh-engine') || 'demo').replace('claude', 'gemini'); } catch (e) { return 'demo'; } });
       const [preview, setPreview] = useState({ team: null, market: null });
       const [drag, setDrag] = useState(false);
       const [scanning, setScanning] = useState(false);
       const [log, setLog] = useState([]);
       const [progress, setProgress] = useState(0);
       const [apiKey, setApiKey] = useState(loadKey);
-      const [remember, setRemember] = useState(() => { try { return !!localStorage.getItem('fh-key'); } catch (e) { return false; } });
+      const [remember, setRemember] = useState(() => { try { return !!localStorage.getItem('fh-gemini-key'); } catch (e) { return false; } });
       const inputRef = useRef(null);
       const timers = useRef([]);
 
@@ -1062,8 +1074,8 @@
           addLog(`> ${words} palabras leídas. Buscando jugadores de LaLiga…`);
           const players = matchPlayersInText(data.text);
           addLog(`> ${players.length} jugadores reconocidos${players.length ? ': ' + players.slice(0, 6).map((p) => p.short).join(', ') + (players.length > 6 ? '…' : '') : ''}`);
-          if (mode === 'team' && players.length < 5) throw new Error(`Solo reconocí ${players.length} jugadores. Prueba con una captura más nítida o con Claude Vision.`);
-          if (!players.length) throw new Error('No reconocí ningún jugador. Prueba con Claude Vision.');
+          if (mode === 'team' && players.length < 5) throw new Error(`Solo reconocí ${players.length} jugadores. Prueba con una captura más nítida o con Gemini Vision.`);
+          if (!players.length) throw new Error('No reconocí ningún jugador. Prueba con Gemini Vision.');
           addLog('> Datos aplicados ✔');
           setProgress(100);
           onAnalyzed(mode, { players, budget: 0, source: 'OCR' });
@@ -1072,21 +1084,21 @@
         } finally { setScanning(false); }
       };
 
-      const runClaude = async (img) => {
-        if (!apiKey.trim()) { setScanning(false); toast('Escribe tu API key de Anthropic', 'error'); return; }
+      const runGemini = async (img) => {
+        if (!apiKey.trim()) { setScanning(false); toast('Escribe tu API key de Gemini', 'error'); return; }
         storeKey(apiKey.trim(), remember);
         let p = 5;
         const tick = setInterval(() => { p = Math.min(92, p + 4); setProgress(p); }, 500);
         try {
-          addLog('> Comprimiendo imagen y enviándola a Claude…');
-          addLog('> Claude está leyendo nombres, posiciones y precios…');
-          const { players, budget } = await claudeVisionExtract(apiKey.trim(), img, mode);
+          addLog('> Comprimiendo imagen y enviándola a Gemini…');
+          addLog('> Gemini está leyendo nombres, posiciones y precios…');
+          const { players, budget } = await geminiVisionExtract(apiKey.trim(), img, mode, addLog);
           addLog(`> ${players.length} jugadores extraídos${players.length ? ': ' + players.slice(0, 6).map((x) => x.short).join(', ') + (players.length > 6 ? '…' : '') : ''}`);
           if (budget > 0) addLog(`> Presupuesto detectado: ${fmtM(budget)}`);
-          if (!players.length) throw new Error('Claude no encontró jugadores en la imagen.');
+          if (!players.length) throw new Error('Gemini no encontró jugadores en la imagen. Prueba con una captura más nítida.');
           setProgress(100);
           addLog('> Datos aplicados ✔');
-          onAnalyzed(mode, { players, budget, source: 'Claude' });
+          onAnalyzed(mode, { players, budget, source: 'Gemini' });
         } catch (e) {
           addLog('✖ ' + e.message); toast(e.message, 'error');
         } finally { clearInterval(tick); setScanning(false); }
@@ -1098,7 +1110,7 @@
         setScanning(true); setLog([]); setProgress(0);
         if (engine === 'demo') runDemo();
         else if (engine === 'tesseract') runTesseract(img);
-        else runClaude(img);
+        else runGemini(img);
       };
 
       const current = preview[mode];
@@ -1130,15 +1142,15 @@
             ))}
           </div>
 
-          {engine === 'claude' && (
+          {engine === 'gemini' && (
             <div className="mb-4 rounded-xl border border-hack/30 bg-hack/[.05] p-3 relative">
-              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">API key de Anthropic</label>
-              <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-ant-…" className="field mt-1 font-mono" autoComplete="off" />
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">API key de Gemini</label>
+              <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AIza…" className="field mt-1 font-mono" autoComplete="off" />
               <label className="flex items-center gap-2 mt-2 text-xs text-slate-400">
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> Recordar en este dispositivo
               </label>
               <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
-                La key se envía directamente desde tu navegador a api.anthropic.com y solo se guarda aquí. Úsala solo en tu propio dispositivo. Cada análisis cuesta unos céntimos de tu cuenta.
+                Consíguela gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="text-neon underline">aistudio.google.com/apikey</a>. Se envía directamente desde tu navegador a Google y solo se guarda en este dispositivo.
               </p>
             </div>
           )}
