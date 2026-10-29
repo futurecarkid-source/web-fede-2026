@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#05060a" />
+  <title>Fantasy Hacker</title>
+
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            void: '#05060a',
+            panel: '#0b0d16',
+            panel2: '#11142080',
+            neon: '#39ff88',
+            neondim: '#1f9e57',
+            hack: '#b026ff',
+            hackdim: '#6d1aa3',
+            danger: '#ff3b6b',
+            warn: '#ffc53d',
+          },
+          fontFamily: {
+            display: ['Orbitron', 'sans-serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- React + Babel -->
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+
+  <style>
+    :root {
+      --neon: #39ff88;
+      --hack: #b026ff;
+      --void: #05060a;
+    }
+    html, body { background: var(--void); color: #e6e8f0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-image:
+        radial-gradient(circle at 15% -10%, rgba(176, 38, 255, .18), transparent 45%),
+        radial-gradient(circle at 100% 20%, rgba(57, 255, 136, .10), transparent 40%),
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: auto, auto, 32px 32px, 32px 32px;
+      background-attachment: fixed;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    ::selection { background: var(--hack); color: #fff; }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #2a2f45; border-radius: 9px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+
+    .glow-text-green { text-shadow: 0 0 8px rgba(57,255,136,.8), 0 0 22px rgba(57,255,136,.35); }
+    .glow-text-purple { text-shadow: 0 0 8px rgba(176,38,255,.9), 0 0 24px rgba(176,38,255,.4); }
+    .glow-green { box-shadow: 0 0 0 1px rgba(57,255,136,.45), 0 0 18px rgba(57,255,136,.18); }
+    .glow-purple { box-shadow: 0 0 0 1px rgba(176,38,255,.55), 0 0 26px rgba(176,38,255,.25); }
+
+    .card {
+      background: linear-gradient(180deg, rgba(17,20,32,.92), rgba(9,11,18,.92));
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 18px;
+      backdrop-filter: blur(6px);
+    }
+    .card-purple {
+      background:
+        linear-gradient(180deg, rgba(40, 10, 66, .55), rgba(12, 6, 22, .9));
+      border: 1px solid rgba(176,38,255,.45);
+      box-shadow: 0 0 30px rgba(176,38,255,.18), inset 0 0 40px rgba(176,38,255,.06);
+      border-radius: 18px;
+    }
+
+    /* Logo glitch */
+    .glitch { position: relative; }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute; inset: 0;
+      overflow: hidden; pointer-events: none;
+    }
+    .glitch::before { color: var(--hack); transform: translate(2px, 0); clip-path: inset(0 0 55% 0); animation: glitchA 3.2s infinite steps(1); opacity: .8; }
+    .glitch::after { color: var(--neon); transform: translate(-2px, 0); clip-path: inset(55% 0 0 0); animation: glitchB 2.7s infinite steps(1); opacity: .8; }
+    @keyframes glitchA { 0%, 92%, 100% { transform: translate(0,0); } 93% { transform: translate(3px,-1px); } 96% { transform: translate(-2px,1px); } }
+    @keyframes glitchB { 0%, 88%, 100% { transform: translate(0,0); } 89% { transform: translate(-3px,1px); } 94% { transform: translate(2px,0); } }
+
+    /* Pitch */
+    .pitch {
+      position: relative;
+      background:
+        repeating-linear-gradient(180deg, #0b3a22 0 10%, #0d4428 10% 20%);
+      border-radius: 18px;
+      border: 1px solid rgba(57,255,136,.35);
+      box-shadow: inset 0 0 60px rgba(0,0,0,.65), 0 0 30px rgba(57,255,136,.08);
+      overflow: hidden;
+    }
+    .pitch-svg line, .pitch-svg rect, .pitch-svg circle, .pitch-svg path { stroke: rgba(210,255,230,.35); stroke-width: .35; fill: none; }
+    .pitch-svg .spot { fill: rgba(210,255,230,.45); stroke: none; }
+
+    .player-chip { transition: transform .2s ease, filter .2s ease; }
+    .player-chip:hover { transform: translateY(-3px) scale(1.04); filter: drop-shadow(0 0 10px rgba(57,255,136,.6)); }
+    .player-chip.selected .shirt { box-shadow: 0 0 0 2px var(--hack), 0 0 22px var(--hack); }
+
+    .shirt {
+      width: 46px; height: 46px; border-radius: 14px;
+      display: grid; place-items: center;
+      font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 12px;
+      color: #05060a;
+      clip-path: polygon(22% 0, 38% 8%, 62% 8%, 78% 0, 100% 18%, 88% 38%, 82% 32%, 82% 100%, 18% 100%, 18% 32%, 12% 38%, 0 18%);
+    }
+    @media (min-width: 640px) { .shirt { width: 54px; height: 54px; font-size: 13px; } }
+
+    /* Scanner */
+    .scan-wrap { position: relative; overflow: hidden; }
+    .scan-line {
+      position: absolute; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--neon), transparent);
+      box-shadow: 0 0 18px var(--neon), 0 0 40px var(--neon);
+      animation: scan 1.6s ease-in-out infinite;
+    }
+    .scan-grid {
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(rgba(57,255,136,.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57,255,136,.12) 1px, transparent 1px);
+      background-size: 18px 18px;
+      mix-blend-mode: screen;
+    }
+    @keyframes scan { 0% { top: 0%; } 50% { top: calc(100% - 3px); } 100% { top: 0%; } }
+
+    .blink { animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .fade-in { animation: fadeIn .45s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .pulse-dot { animation: pulseDot 1.6s ease-in-out infinite; }
+    @keyframes pulseDot { 0%, 100% { box-shadow: 0 0 0 0 rgba(57,255,136,.7); } 50% { box-shadow: 0 0 0 7px rgba(57,255,136,0); } }
+
+    .bump { animation: bump .6s ease; }
+    @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.15); color: #fff; } 100% { transform: scale(1); } }
+
+    input[type=range] { accent-color: var(--hack); }
+    .dropzone-active { border-color: var(--neon) !important; background: rgba(57,255,136,.06); }
+
+    .btn-neon {
+      background: linear-gradient(90deg, #39ff88, #1fd6a0);
+      color: #03140a; font-weight: 800;
+      box-shadow: 0 0 18px rgba(57,255,136,.45);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .btn-neon:hover { transform: translateY(-1px); box-shadow: 0 0 28px rgba(57,255,136,.7); }
+    .btn-hack {
+      background: linear-gradient(90deg, #b026ff, #7b2bff);
+      color: #fff; font-weight: 800;
+      box-shadow: 0 0 18px rgba(176,38,255,.5);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .btn-hack:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(176,38,255,.8); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+
+    .sheet-backdrop { background: rgba(2,3,8,.72); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div style="min-height:100vh;display:grid;place-items:center;font-family:monospace;color:#39ff88">Inicializando Fantasy Hacker…</div>
+  </div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useMemo, useEffect, useRef, useCallback } = React;
+
+    /* =====================================================
+       DATOS: EQUIPOS Y PRÓXIMA JORNADA
+       diff: 1 (rival muy débil) → 5 (rival durísimo)
+    ===================================================== */
+    const TEAMS = {
+      RMA: { name: 'Real Madrid', color: '#f5f5f5', next: { rival: 'Getafe', diff: 2, home: true } },
+      BAR: { name: 'FC Barcelona', color: '#3b5bff', next: { rival: 'Elche', diff: 2, home: false } },
+      ATM: { name: 'Atlético', color: '#ff3b4e', next: { rival: 'Real Betis', diff: 3, home: true } },
+      ATH: { name: 'Athletic', color: '#ff5a3c', next: { rival: 'Villarreal', diff: 4, home: false } },
+      RSO: { name: 'Real Sociedad', color: '#3fa8ff', next: { rival: 'Real Oviedo', diff: 1, home: true } },
+      VIL: { name: 'Villarreal', color: '#ffe24a', next: { rival: 'Athletic', diff: 3, home: true } },
+      BET: { name: 'Real Betis', color: '#2bd46f', next: { rival: 'Atlético', diff: 4, home: false } },
+      OSA: { name: 'Osasuna', color: '#d1314a', next: { rival: 'Girona', diff: 2, home: true } },
+      CEL: { name: 'Celta', color: '#8fd3ff', next: { rival: 'Mallorca', diff: 2, home: true } },
+      ESP: { name: 'Espanyol', color: '#4f8dff', next: { rival: 'Alavés', diff: 2, home: true } },
+      SEV: { name: 'Sevilla', color: '#ffffff', next: { rival: 'Levante', diff: 2, home: true } },
+      GIR: { name: 'Girona', color: '#ff4d6d', next: { rival: 'Osasuna', diff: 3, home: false } },
+      VAL: { name: 'Valencia', color: '#ff9f1c', next: { rival: 'Rayo', diff: 3, home: false } },
+    };
+
+    /* =====================================================
+       JUGADORES
+       price en millones · form = últimas 5 jornadas
+       last = último partido · trend = % previsto de precio esta semana
+    ===================================================== */
+    const mk = (p) => ({ ...p });
+
+    const INITIAL_SQUAD = [
+      // Titulares 4-3-3
+      mk({ id: 's1', name: 'Álex Remiro', short: 'Remiro', team: 'RSO', pos: 'POR', price: 9.8, points: 48, avg: 4.8, form: [6, 4, 2, 5, 3], health: 'ok', trend: 2, starter: true,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.4 } }),
+      mk({ id: 's2', name: 'Jules Koundé', short: 'Koundé', team: 'BAR', pos: 'DEF', price: 14.5, points: 61, avg: 6.1, form: [8, 7, 4, 9, 6], health: 'ok', trend: 4, starter: true,
+        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 7.6 } }),
+      mk({ id: 's3', name: 'Robin Le Normand', short: 'Le Normand', team: 'ATM', pos: 'DEF', price: 7.9, points: 27, avg: 3.0, form: [2, 1, 3, 0, 1], health: 'ok', trend: -6, starter: true,
+        last: { goals: 0, assists: 0, minutes: 45, subbedAt: 45, rating: 5.1 } }),
+      mk({ id: 's4', name: 'Raúl Asencio', short: 'Asencio', team: 'RMA', pos: 'DEF', price: 9.1, points: 39, avg: 4.3, form: [5, 6, 2, 4, 5], health: 'ok', trend: 1, starter: true,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.8 } }),
+      mk({ id: 's5', name: 'Aitor Paredes', short: 'Paredes', team: 'ATH', pos: 'DEF', price: 6.4, points: 22, avg: 2.8, form: [3, 2, 1, 2, 0], health: 'duda', trend: -4, starter: true,
+        last: { goals: 0, assists: 0, minutes: 62, subbedAt: 62, rating: 5.5 } }),
+      mk({ id: 's6', name: 'Federico Valverde', short: 'Valverde', team: 'RMA', pos: 'MED', price: 17.2, points: 72, avg: 7.2, form: [9, 6, 8, 10, 7], health: 'ok', trend: 3, starter: true,
+        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 7.9 } }),
+      mk({ id: 's7', name: 'Oihan Sancet', short: 'Sancet', team: 'ATH', pos: 'MED', price: 13.4, points: 44, avg: 4.9, form: [4, 2, 6, 3, 2], health: 'duda', trend: -3, starter: true,
+        last: { goals: 0, assists: 0, minutes: 58, subbedAt: 58, rating: 5.9 } }),
+      mk({ id: 's8', name: 'Isco Alarcón', short: 'Isco', team: 'BET', pos: 'MED', price: 10.2, points: 30, avg: 5.0, form: [0, 0, 0, 5, 7], health: 'lesionado', trend: -8, starter: true,
+        last: { goals: 0, assists: 0, minutes: 0, subbedAt: null, rating: 0 } }),
+      mk({ id: 's9', name: 'Robert Lewandowski', short: 'Lewandowski', team: 'BAR', pos: 'DEL', price: 16.8, points: 58, avg: 6.4, form: [4, 2, 9, 3, 2], health: 'ok', trend: -5, starter: true,
+        last: { goals: 0, assists: 0, minutes: 71, subbedAt: 71, rating: 6.0 } }),
+      mk({ id: 's10', name: 'Iñaki Williams', short: 'I. Williams', team: 'ATH', pos: 'DEL', price: 11.2, points: 35, avg: 3.9, form: [3, 1, 4, 2, 1], health: 'ok', trend: -7, starter: true,
+        last: { goals: 0, assists: 0, minutes: 45, subbedAt: 45, rating: 5.2 } }),
+      mk({ id: 's11', name: 'Ante Budimir', short: 'Budimir', team: 'OSA', pos: 'DEL', price: 12.7, points: 63, avg: 7.0, form: [10, 6, 7, 9, 8], health: 'ok', trend: 6, starter: true,
+        last: { goals: 2, assists: 0, minutes: 90, subbedAt: null, rating: 8.4 } }),
+      // Banquillo
+      mk({ id: 's12', name: 'Marko Dmitrović', short: 'Dmitrović', team: 'ESP', pos: 'POR', price: 4.2, points: 31, avg: 3.4, form: [4, 3, 5, 2, 4], health: 'ok', trend: 0, starter: false,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.5 } }),
+      mk({ id: 's13', name: 'Alejandro Catena', short: 'Catena', team: 'OSA', pos: 'DEF', price: 4.5, points: 33, avg: 3.7, form: [5, 4, 3, 6, 4], health: 'ok', trend: 2, starter: false,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.9 } }),
+      mk({ id: 's14', name: 'Jon Moncayola', short: 'Moncayola', team: 'OSA', pos: 'MED', price: 3.9, points: 29, avg: 3.2, form: [3, 4, 2, 5, 4], health: 'ok', trend: 1, starter: false,
+        last: { goals: 0, assists: 1, minutes: 84, subbedAt: 84, rating: 6.6 } }),
+    ];
+
+    const INITIAL_MARKET = [
+      mk({ id: 'm1', name: 'Joan García', short: 'Joan García', team: 'BAR', pos: 'POR', price: 11.5, points: 57, avg: 6.3, form: [7, 8, 5, 6, 9], health: 'ok', trend: 7,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 7.8 } }),
+      mk({ id: 'm2', name: 'Unai Simón', short: 'U. Simón', team: 'ATH', pos: 'POR', price: 9.0, points: 40, avg: 4.4, form: [3, 5, 4, 2, 6], health: 'ok', trend: -1,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.3 } }),
+      mk({ id: 'm3', name: 'Dean Huijsen', short: 'Huijsen', team: 'RMA', pos: 'DEF', price: 12.8, points: 55, avg: 6.1, form: [7, 6, 8, 5, 7], health: 'ok', trend: 9,
+        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 7.7 } }),
+      mk({ id: 'm4', name: 'Marc Pubill', short: 'Pubill', team: 'ATM', pos: 'DEF', price: 6.2, points: 36, avg: 4.5, form: [4, 6, 3, 7, 8], health: 'ok', trend: 12,
+        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 7.4 } }),
+      mk({ id: 'm5', name: 'Pau Cubarsí', short: 'Cubarsí', team: 'BAR', pos: 'DEF', price: 13.9, points: 50, avg: 5.6, form: [6, 5, 7, 4, 6], health: 'ok', trend: 3,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 7.1 } }),
+      mk({ id: 'm6', name: 'David Hancko', short: 'Hancko', team: 'ATM', pos: 'DEF', price: 9.4, points: 41, avg: 4.6, form: [5, 4, 6, 5, 3], health: 'ok', trend: 2,
+        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 6.9 } }),
+      mk({ id: 'm7', name: 'Álex Baena', short: 'Baena', team: 'VIL', pos: 'MED', price: 15.1, points: 64, avg: 7.1, form: [8, 9, 6, 7, 10], health: 'ok', trend: 8,
+        last: { goals: 0, assists: 2, minutes: 90, subbedAt: null, rating: 8.2 } }),
+      mk({ id: 'm8', name: 'Fermín López', short: 'Fermín', team: 'BAR', pos: 'MED', price: 12.6, points: 49, avg: 6.0, form: [5, 7, 4, 9, 11], health: 'ok', trend: 12,
+        last: { goals: 1, assists: 1, minutes: 82, subbedAt: 82, rating: 8.3 } }),
+      mk({ id: 'm9', name: 'Arda Güler', short: 'Arda Güler', team: 'RMA', pos: 'MED', price: 14.0, points: 53, avg: 6.2, form: [6, 8, 7, 5, 9], health: 'ok', trend: 10,
+        last: { goals: 1, assists: 0, minutes: 77, subbedAt: 77, rating: 7.9 } }),
+      mk({ id: 'm10', name: 'Pablo Barrios', short: 'Barrios', team: 'ATM', pos: 'MED', price: 10.4, points: 42, avg: 4.8, form: [4, 5, 6, 3, 5], health: 'ok', trend: 1,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.8 } }),
+      mk({ id: 'm11', name: 'Mikel Oyarzabal', short: 'Oyarzabal', team: 'RSO', pos: 'DEL', price: 15.9, points: 60, avg: 6.7, form: [6, 8, 5, 9, 10], health: 'ok', trend: 12,
+        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 8.0 } }),
+      mk({ id: 'm12', name: 'Julián Álvarez', short: 'J. Álvarez', team: 'ATM', pos: 'DEL', price: 21.0, points: 74, avg: 7.8, form: [9, 7, 10, 6, 8], health: 'ok', trend: 6,
+        last: { goals: 1, assists: 1, minutes: 90, subbedAt: null, rating: 8.1 } }),
+      mk({ id: 'm13', name: 'Ayoze Pérez', short: 'Ayoze', team: 'VIL', pos: 'DEL', price: 10.8, points: 47, avg: 5.6, form: [7, 3, 6, 8, 5], health: 'ok', trend: 7,
+        last: { goals: 1, assists: 0, minutes: 85, subbedAt: 85, rating: 7.5 } }),
+      mk({ id: 'm14', name: 'Kike García', short: 'Kike García', team: 'ESP', pos: 'DEL', price: 8.3, points: 44, avg: 5.2, form: [5, 6, 4, 7, 9], health: 'ok', trend: 9,
+        last: { goals: 1, assists: 0, minutes: 88, subbedAt: 88, rating: 7.6 } }),
+      mk({ id: 'm15', name: 'Vinícius Júnior', short: 'Vinícius', team: 'RMA', pos: 'DEL', price: 24.5, points: 66, avg: 7.3, form: [6, 9, 4, 8, 7], health: 'sancionado', trend: -2,
+        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 7.0 } }),
+    ];
+
+    /* Datos que "detecta" el OCR simulado */
+    const OCR_SQUAD = [
+      mk({ id: 'o1', name: 'Jan Oblak', short: 'Oblak', team: 'ATM', pos: 'POR', price: 12.1, points: 52, avg: 5.4, form: [5, 7, 4, 6, 5], health: 'ok', trend: 1, starter: true,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 7.0 } }),
+      mk({ id: 'o2', name: 'Alejandro Balde', short: 'Balde', team: 'BAR', pos: 'DEF', price: 11.0, points: 45, avg: 5.0, form: [6, 4, 5, 3, 6], health: 'ok', trend: 2, starter: true,
+        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 7.2 } }),
+      mk({ id: 'o3', name: 'Óscar Mingueza', short: 'Mingueza', team: 'CEL', pos: 'DEF', price: 8.6, points: 40, avg: 4.4, form: [5, 3, 6, 4, 5], health: 'ok', trend: 3, starter: true,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.7 } }),
+      mk({ id: 'o4', name: 'Daniel Carvajal', short: 'Carvajal', team: 'RMA', pos: 'DEF', price: 10.3, points: 23, avg: 3.8, form: [0, 0, 4, 3, 2], health: 'duda', trend: -5, starter: true,
+        last: { goals: 0, assists: 0, minutes: 46, subbedAt: 46, rating: 5.6 } }),
+      mk({ id: 'o5', name: 'Clément Lenglet', short: 'Lenglet', team: 'ATM', pos: 'DEF', price: 5.6, points: 21, avg: 2.9, form: [2, 3, 1, 2, 3], health: 'ok', trend: -2, starter: true,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 5.9 } }),
+      mk({ id: 'o6', name: 'Pedri González', short: 'Pedri', team: 'BAR', pos: 'MED', price: 18.4, points: 70, avg: 7.0, form: [8, 9, 6, 7, 8], health: 'ok', trend: 4, starter: true,
+        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 8.0 } }),
+      mk({ id: 'o7', name: 'Koke Resurrección', short: 'Koke', team: 'ATM', pos: 'MED', price: 6.9, points: 26, avg: 3.1, form: [2, 3, 1, 4, 2], health: 'ok', trend: -4, starter: true,
+        last: { goals: 0, assists: 0, minutes: 45, subbedAt: 45, rating: 5.4 } }),
+      mk({ id: 'o8', name: 'Brais Méndez', short: 'Brais', team: 'RSO', pos: 'MED', price: 8.8, points: 38, avg: 4.5, form: [4, 6, 3, 5, 4], health: 'ok', trend: 2, starter: true,
+        last: { goals: 0, assists: 1, minutes: 75, subbedAt: 75, rating: 6.9 } }),
+      mk({ id: 'o9', name: 'Kylian Mbappé', short: 'Mbappé', team: 'RMA', pos: 'DEL', price: 27.5, points: 92, avg: 9.2, form: [10, 12, 8, 9, 11], health: 'ok', trend: 3, starter: true,
+        last: { goals: 2, assists: 0, minutes: 90, subbedAt: null, rating: 9.0 } }),
+      mk({ id: 'o10', name: 'Borja Iglesias', short: 'B. Iglesias', team: 'CEL', pos: 'DEL', price: 7.1, points: 30, avg: 3.6, form: [2, 4, 1, 3, 2], health: 'ok', trend: -6, starter: true,
+        last: { goals: 0, assists: 0, minutes: 45, subbedAt: 45, rating: 5.3 } }),
+      mk({ id: 'o11', name: 'Raphinha', short: 'Raphinha', team: 'BAR', pos: 'DEL', price: 19.6, points: 64, avg: 7.4, form: [0, 0, 7, 9, 8], health: 'lesionado', trend: -9, starter: true,
+        last: { goals: 0, assists: 0, minutes: 0, subbedAt: null, rating: 0 } }),
+      mk({ id: 'o12', name: 'Paulo Gazzaniga', short: 'Gazzaniga', team: 'GIR', pos: 'POR', price: 3.8, points: 28, avg: 3.1, form: [3, 2, 4, 3, 3], health: 'ok', trend: 0, starter: false,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.2 } }),
+      mk({ id: 'o13', name: 'Javi Galán', short: 'J. Galán', team: 'ATM', pos: 'DEF', price: 4.9, points: 30, avg: 3.4, form: [3, 4, 3, 2, 5], health: 'ok', trend: 1, starter: false,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.4 } }),
+      mk({ id: 'o14', name: 'Pape Gueye', short: 'P. Gueye', team: 'VIL', pos: 'MED', price: 5.4, points: 34, avg: 3.8, form: [4, 3, 5, 4, 4], health: 'ok', trend: 2, starter: false,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 6.7 } }),
+    ];
+
+    const OCR_MARKET = [
+      mk({ id: 'x1', name: 'Lamine Yamal', short: 'Lamine', team: 'BAR', pos: 'DEL', price: 26.9, points: 81, avg: 8.6, form: [9, 11, 7, 10, 12], health: 'ok', trend: 8, isNew: true,
+        last: { goals: 1, assists: 2, minutes: 90, subbedAt: null, rating: 9.2 } }),
+      mk({ id: 'x2', name: 'Takefusa Kubo', short: 'Kubo', team: 'RSO', pos: 'DEL', price: 11.9, points: 46, avg: 5.4, form: [4, 6, 7, 6, 9], health: 'ok', trend: 11, isNew: true,
+        last: { goals: 1, assists: 0, minutes: 90, subbedAt: null, rating: 7.8 } }),
+      mk({ id: 'x3', name: 'Johnny Cardoso', short: 'Cardoso', team: 'ATM', pos: 'MED', price: 7.7, points: 33, avg: 4.6, form: [3, 5, 6, 5, 7], health: 'ok', trend: 9, isNew: true,
+        last: { goals: 0, assists: 1, minutes: 90, subbedAt: null, rating: 7.3 } }),
+      mk({ id: 'x4', name: 'Pau Torres', short: 'Pau Torres', team: 'VIL', pos: 'DEF', price: 8.9, points: 37, avg: 4.9, form: [6, 5, 4, 7, 6], health: 'ok', trend: 6, isNew: true,
+        last: { goals: 0, assists: 0, minutes: 90, subbedAt: null, rating: 7.2 } }),
+      mk({ id: 'x5', name: 'Iago Aspas', short: 'Aspas', team: 'CEL', pos: 'DEL', price: 9.6, points: 43, avg: 5.3, form: [6, 4, 8, 5, 7], health: 'ok', trend: 5, isNew: true,
+        last: { goals: 1, assists: 0, minutes: 70, subbedAt: 70, rating: 7.4 } }),
+    ];
+
+    const INITIAL_RIVALS = [
+      { id: 'r1', name: 'Los Galácticos de Kike', budget: 34.6 },
+      { id: 'r2', name: 'Fede FC Turbo', budget: 21.3 },
+      { id: 'r3', name: 'Rayo Cuñao', budget: 12.8 },
+      { id: 'r4', name: 'Atlético Bocata', budget: 27.9 },
+    ];
+
+    const INITIAL_BUDGET = 22.0;
+    const OCR_BUDGET = 12.4; // caja leída de la captura de equipo
+    const FORMATION = { POR: 1, DEF: 4, MED: 3, DEL: 3 };
+    const POS_LABEL = { POR: 'Portero', DEF: 'Defensa', MED: 'Medio', DEL: 'Delantero' };
+    const POS_COLOR = { POR: '#ffc53d', DEF: '#3fa8ff', MED: '#39ff88', DEL: '#ff3b6b' };
+    const STORAGE_KEY = 'fantasy-hacker-v1';
+
+    /* =====================================================
+       MOTOR DE PROYECCIÓN
+    ===================================================== */
+    const DIFF_MULT = { 1: 1.3, 2: 1.15, 3: 1, 4: 0.85, 5: 0.7 };
+    const HEALTH_MULT = { ok: 1, duda: 0.55, lesionado: 0, sancionado: 0 };
+    const HEALTH_INFO = {
+      ok: { label: 'Disponible', cls: 'text-neon', dot: 'bg-neon' },
+      duda: { label: 'Duda', cls: 'text-warn', dot: 'bg-warn' },
+      lesionado: { label: 'Lesionado', cls: 'text-danger', dot: 'bg-danger' },
+      sancionado: { label: 'Sancionado', cls: 'text-danger', dot: 'bg-danger' },
+    };
+
+    const mean = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
+    const formAvg = (p) => mean(p.form);
+    const nextOf = (p) => (TEAMS[p.team] || { next: { rival: '—', diff: 3, home: true } }).next;
+
+    function projection(p) {
+      const n = nextOf(p);
+      const base = 0.45 * p.avg + 0.55 * formAvg(p);
+      const minutesFactor = p.last.minutes >= 70 ? 1.05 : p.last.minutes >= 46 ? 0.9 : p.last.minutes > 0 ? 0.8 : 0.85;
+      const val = base * DIFF_MULT[n.diff] * HEALTH_MULT[p.health] * minutesFactor;
+      return Math.round(val * 10) / 10;
+    }
+
+    const fmtM = (m) => `${m.toFixed(1)}M€`;
+    const fmtEUR = (m) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 }).format(Math.round(m * 1e6)) + ' €';
+    const sign = (n) => (n > 0 ? '+' : '') + n;
+
+    /* =====================================================
+       IA NARRATIVA: genera hacks y recomendaciones
+    ===================================================== */
+    function describeGood(p) {
+      const r = [];
+      const n = nextOf(p);
+      if (p.last.goals > 0) r.push(`metió ${p.last.goals === 1 ? 'gol' : p.last.goals + ' goles'} el partido pasado`);
+      if (p.last.assists > 0) r.push(`dio ${p.last.assists === 1 ? 'una asistencia' : p.last.assists + ' asistencias'}`);
+      if (p.last.rating >= 7.5) r.push(`firmó un ${p.last.rating.toFixed(1)} de nota`);
+      if (formAvg(p) >= 6.5) r.push(`lleva una racha oculta de ${formAvg(p).toFixed(1)} pts de media en las últimas 5`);
+      if (n.diff <= 2) r.push(`su equipo (${TEAMS[p.team].name}) ${n.home ? 'recibe' : 'visita'} a ${n.rival}, un rival débil (dificultad ${n.diff}/5)`);
+      if (p.trend > 0) r.push(`su precio va a subir un ${p.trend}% esta semana`);
+      return r;
+    }
+
+    function describeBad(p) {
+      const r = [];
+      const n = nextOf(p);
+      if (p.health === 'lesionado') r.push('está lesionado y no sumará nada esta jornada');
+      if (p.health === 'sancionado') r.push('está sancionado: 0 puntos asegurados');
+      if (p.health === 'duda') r.push('es duda médica para el próximo partido');
+      if (p.last.subbedAt && p.last.subbedAt <= 65) r.push(`viene de ser sustituido al minuto ${p.last.subbedAt} con un pobre ${p.last.rating.toFixed(1)} de nota`);
+      if (formAvg(p) < 3) r.push(`promedia solo ${formAvg(p).toFixed(1)} pts en las últimas 5 jornadas`);
+      if (n.diff >= 4) r.push(`le toca contra ${n.rival}, de los rivales más duros (dificultad ${n.diff}/5)`);
+      if (p.trend < 0) r.push(`su precio caerá un ${Math.abs(p.trend)}% si no lo vendes ya`);
+      return r;
+    }
+
+    const joinEs = (arr) => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
+
+    function generateHacks(squad, market, budget) {
+      const hacks = [];
+      const starters = squad.filter((p) => p.starter);
+      const used = new Set();
+
+      const ranked = [...starters].sort((a, b) => projection(a) - projection(b));
+      ranked.forEach((s) => {
+        const candidates = market
+          .filter((m) => m.pos === s.pos && m.health === 'ok' && !used.has(m.id) && m.price <= budget + s.price)
+          .map((m) => ({ m, gain: projection(m) - projection(s) }))
+          .filter((c) => c.gain >= 1.2)
+          .sort((a, b) => b.gain - a.gain + (b.m.trend - a.m.trend) * 0.05);
+        if (!candidates.length) return;
+        const { m, gain } = candidates[0];
+        used.add(m.id);
+        const good = describeGood(m);
+        const bad = describeBad(s);
+        const cost = m.price - s.price;
+        const severity = s.health === 'lesionado' || s.health === 'sancionado' ? 'critical' : gain >= 3 ? 'high' : 'mid';
+        hacks.push({
+          id: `hack-${s.id}-${m.id}`,
+          type: 'swap',
+          severity,
+          outId: s.id,
+          inId: m.id,
+          title: `Cambia a ${s.name} por ${m.name}`,
+          why: `El jugador del mercado ${joinEs(good) || 'tiene mejor proyección'}. En cambio, tu titular ${joinEs(bad) || 'rinde por debajo de su alternativa'}.`,
+          impact: `+${gain.toFixed(1)} pts proyectados · ${cost >= 0 ? 'Coste neto ' + fmtM(cost) : 'Liberas ' + fmtM(-cost)}`,
+          gain,
+        });
+      });
+
+      // Alertas sin reemplazo asequible
+      starters.forEach((s) => {
+        if ((s.health === 'lesionado' || s.health === 'sancionado') && !hacks.find((h) => h.outId === s.id)) {
+          const bench = squad.find((b) => !b.starter && b.pos === s.pos && b.health === 'ok');
+          hacks.push({
+            id: `alert-${s.id}`,
+            type: bench ? 'bench' : 'alert',
+            severity: 'critical',
+            outId: s.id,
+            inId: bench ? bench.id : null,
+            title: `${s.name} ${s.health === 'lesionado' ? 'LESIONADO' : 'SANCIONADO'} en tu once`,
+            why: bench
+              ? `No hay fichaje rentable en tu presupuesto, pero ${bench.name} está en tu banquillo y suma ${projection(bench).toFixed(1)} pts proyectados frente a 0.`
+              : `Ahora mismo te da 0 puntos y no hay sustituto en caja. Vende para liberar ${fmtM(s.price)} antes de que su precio caiga un ${Math.abs(s.trend)}%.`,
+            impact: bench ? `+${projection(bench).toFixed(1)} pts al instante` : 'Riesgo de 0 puntos',
+            gain: bench ? projection(bench) : 0,
+          });
+        }
+      });
+
+      // Mantener a joyas en subida
+      squad.filter((p) => p.trend >= 4 && p.health === 'ok').slice(0, 2).forEach((p) => {
+        hacks.push({
+          id: `hold-${p.id}`,
+          type: 'hold',
+          severity: 'info',
+          outId: p.id,
+          title: `Blinda a ${p.name}`,
+          why: `${joinEs(describeGood(p)) || 'Está en forma'}. Venderlo ahora sería regalar su revalorización a la liga. Ponle precio de guerra en la calculadora de cláusulas.`,
+          impact: `Revalorización estimada ${fmtM(p.price * p.trend / 100)}`,
+          gain: 0,
+        });
+      });
+
+      const order = { critical: 0, high: 1, mid: 2, info: 3 };
+      return hacks.sort((a, b) => order[a.severity] - order[b.severity] || b.gain - a.gain);
+    }
+
+    function generateCards(squad, market) {
+      const buy = market
+        .filter((m) => m.health === 'ok' && (m.trend >= 6 || formAvg(m) >= 6.5))
+        .sort((a, b) => b.trend + formAvg(b) - (a.trend + formAvg(a)))
+        .slice(0, 6)
+        .map((p) => ({ p, reason: p.trend >= 9 ? `Aceleración de mercado +${p.trend}%` : `Racha oculta: ${formAvg(p).toFixed(1)} pts/partido` }));
+      const sell = squad
+        .filter((p) => p.trend <= -3 || p.health === 'lesionado' || p.health === 'sancionado' || formAvg(p) < 2.5)
+        .sort((a, b) => a.trend - b.trend)
+        .map((p) => ({ p, reason: p.health === 'lesionado' ? 'Lesión: valor en caída libre' : p.health === 'sancionado' ? 'Sancionado esta jornada' : `Precio cayendo ${p.trend}%` }));
+      const sellIds = new Set(sell.map((s) => s.p.id));
+      const hold = squad
+        .filter((p) => !sellIds.has(p.id))
+        .sort((a, b) => projection(b) - projection(a))
+        .slice(0, 6)
+        .map((p) => ({ p, reason: p.trend > 0 ? `Revalorizando +${p.trend}%` : `Proyección sólida: ${projection(p)} pts` }));
+      return { buy, sell, hold };
+    }
+
+    /* =====================================================
+       PERSISTENCIA (opcional, local)
+    ===================================================== */
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function saveState(s) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) { /* sin almacenamiento */ }
+    }
+
+    /* =====================================================
+       COMPONENTES UI
+    ===================================================== */
+    function Icon({ name, className = 'w-5 h-5' }) {
+      const paths = {
+        upload: <><path d="M12 16V4m0 0l-4 4m4-4l4 4" /><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" /></>,
+        scan: <><path d="M4 7V5a1 1 0 011-1h2M17 4h2a1 1 0 011 1v2M20 17v2a1 1 0 01-1 1h-2M7 20H5a1 1 0 01-1-1v-2" /><path d="M4 12h16" /></>,
+        bolt: <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />,
+        wallet: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M16 12h2M3 9h18" /></>,
+        chart: <><path d="M4 19V5M4 19h16" /><path d="M8 15l3-4 3 2 4-6" /></>,
+        swap: <><path d="M7 7h11l-3-3M17 17H6l3 3" /></>,
+        x: <path d="M6 6l12 12M18 6L6 18" />,
+        shield: <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" />,
+        target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" /></>,
+        reset: <><path d="M4 4v6h6" /><path d="M20 12a8 8 0 01-14.9 4M4 10a8 8 0 0114.9-2" /></>,
+        image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="M21 16l-5-5-9 9" /></>,
+      };
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+          {paths[name]}
+        </svg>
+      );
+    }
+
+    function HealthDot({ health }) {
+      const h = HEALTH_INFO[health];
+      return <span className={`inline-block w-2 h-2 rounded-full ${h.dot}`} title={h.label} />;
+    }
+
+    function TrendTag({ trend }) {
+      const cls = trend > 0 ? 'text-neon bg-neon/10 border-neon/30' : trend < 0 ? 'text-danger bg-danger/10 border-danger/30' : 'text-slate-400 bg-white/5 border-white/10';
+      return <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded border ${cls}`}>{trend > 0 ? '▲' : trend < 0 ? '▼' : '■'} {Math.abs(trend)}%</span>;
+    }
+
+    function PosTag({ pos }) {
+      return <span className="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: POS_COLOR[pos], background: POS_COLOR[pos] + '1a', border: `1px solid ${POS_COLOR[pos]}55` }}>{pos}</span>;
+    }
+
+    function FormBars({ form }) {
+      return (
+        <div className="flex items-end gap-0.5 h-5" title={`Últimas 5: ${form.join(', ')}`}>
+          {form.map((v, i) => (
+            <span key={i} className="w-1.5 rounded-sm" style={{ height: `${Math.max(12, Math.min(100, v * 9))}%`, background: v >= 7 ? '#39ff88' : v >= 4 ? '#ffc53d' : '#ff3b6b' }} />
+          ))}
+        </div>
+      );
+    }
+
+    /* ---------- NAVBAR ---------- */
+    function Navbar({ squadValue, budget, projTotal, onReset }) {
+      const [bumpKey, setBumpKey] = useState(0);
+      useEffect(() => { setBumpKey((k) => k + 1); }, [squadValue, budget, projTotal]);
+      return (
+        <header className="sticky top-0 z-40 border-b border-white/10 bg-void/80 backdrop-blur-md">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl grid place-items-center bg-hack/20 glow-purple text-neon shrink-0">
+                <Icon name="bolt" className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="font-display font-black text-lg sm:text-xl tracking-wider leading-none">
+                  <span className="glitch text-neon glow-text-green" data-text="FANTASY">FANTASY</span>{' '}
+                  <span className="text-hack glow-text-purple">HACKER</span>
+                </h1>
+                <p className="font-mono text-[10px] text-slate-500 tracking-widest mt-0.5 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-neon pulse-dot" /> IA ONLINE · JORNADA 11
+                </p>
+              </div>
+            </div>
+            <div className="flex items-stretch gap-2 w-full sm:w-auto">
+              <Stat label="Valor Plantilla" value={fmtM(squadValue)} icon="chart" tone="neon" k={bumpKey} />
+              <Stat label="Presupuesto en Caja" value={fmtM(budget)} icon="wallet" tone={budget < 0 ? 'danger' : 'hack'} k={bumpKey} />
+              <Stat label="Proyección" value={`${projTotal.toFixed(1)} pts`} icon="target" tone="neon" k={bumpKey} className="hidden md:flex" />
+              <button onClick={onReset} title="Reiniciar datos de prueba" className="px-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-neon hover:border-neon/50 transition">
+                <Icon name="reset" className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    function Stat({ label, value, icon, tone, k, className = '' }) {
+      const color = tone === 'neon' ? 'text-neon' : tone === 'danger' ? 'text-danger' : 'text-hack';
+      return (
+        <div className={`flex-1 sm:flex-none flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[.03] border border-white/10 ${className}`}>
+          <Icon name={icon} className={`w-4 h-4 ${color} shrink-0`} />
+          <div className="leading-tight">
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold whitespace-nowrap">{label}</div>
+            <div key={k} className={`font-display font-extrabold text-sm sm:text-base ${color} bump`}>{value}</div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ---------- ZONA DE CARGA + OCR ---------- */
+    const OCR_SCRIPTS = {
+      team: [
+        '> Cargando modelo de visión «HackerVision-v4»…',
+        '> Preprocesando imagen: contraste +32%, desenfoque −0.8',
+        '> Detectando bloques de texto… 47 regiones',
+        '> Reconociendo dorsales y nombres… 14 jugadores',
+        '> Cruzando con base de datos de LaLiga… 100% match',
+        '> Leyendo precios, puntos y estado médico…',
+        '> Formación detectada: 4-3-3 ✔',
+      ],
+      market: [
+        '> Cargando modelo de visión «HackerVision-v4»…',
+        '> Segmentando tarjetas del mercado… 5 detectadas',
+        '> OCR de precios y pujas mínimas…',
+        '> Analizando velocidad de subida de precio (Δ 24h)…',
+        '> Detectando rachas ocultas en las últimas 5 jornadas…',
+        '> Inyectando oportunidades en el mercado ✔',
+      ],
+    };
+
+    function UploadZone({ onAnalyzed }) {
+      const [mode, setMode] = useState('team');
+      const [preview, setPreview] = useState({ team: null, market: null });
+      const [drag, setDrag] = useState(false);
+      const [scanning, setScanning] = useState(false);
+      const [log, setLog] = useState([]);
+      const [progress, setProgress] = useState(0);
+      const inputRef = useRef(null);
+      const timers = useRef([]);
+
+      useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+      const readFile = (file) => {
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (e) => setPreview((p) => ({ ...p, [mode]: e.target.result }));
+        reader.readAsDataURL(file);
+      };
+
+      const analyze = () => {
+        const script = OCR_SCRIPTS[mode];
+        setScanning(true);
+        setLog([]);
+        setProgress(0);
+        script.forEach((line, i) => {
+          timers.current.push(setTimeout(() => {
+            setLog((l) => [...l, line]);
+            setProgress(Math.round(((i + 1) / script.length) * 100));
+          }, 380 * (i + 1)));
+        });
+        timers.current.push(setTimeout(() => {
+          setScanning(false);
+          onAnalyzed(mode);
+        }, 380 * (script.length + 1) + 200));
+      };
+
+      const current = preview[mode];
+
+      return (
+        <section className="card p-4 sm:p-5 glow-green relative overflow-hidden">
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-neon/10 blur-3xl pointer-events-none" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 relative">
+            <div>
+              <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-white flex items-center gap-2">
+                <Icon name="scan" className="w-5 h-5 text-neon" /> VISIÓN IA · OCR
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Sube una captura de tu app fantasy y la IA la convierte en datos accionables.</p>
+            </div>
+            <div className="grid grid-cols-2 p-1 rounded-xl bg-black/40 border border-white/10 text-xs font-semibold">
+              {[['team', 'Imagen de Equipo'], ['market', 'Imagen de Mercado']].map(([k, l]) => (
+                <button key={k} onClick={() => !scanning && setMode(k)}
+                  className={`px-3 py-2 rounded-lg transition ${mode === k ? 'bg-neon text-void shadow-[0_0_14px_rgba(57,255,136,.5)]' : 'text-slate-400 hover:text-white'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-[1.1fr_1fr] gap-4 relative">
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={(e) => { e.preventDefault(); setDrag(false); readFile(e.dataTransfer.files[0]); }}
+              onClick={() => !scanning && inputRef.current?.click()}
+              className={`scan-wrap cursor-pointer rounded-2xl border-2 border-dashed border-white/15 hover:border-neon/60 transition min-h-[180px] grid place-items-center text-center bg-black/30 ${drag ? 'dropzone-active' : ''}`}
+            >
+              <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files[0])} />
+              {current ? (
+                <img src={current} alt="Captura subida" className="absolute inset-0 w-full h-full object-cover opacity-70" />
+              ) : (
+                <div className="px-4 py-6">
+                  <div className="mx-auto w-14 h-14 rounded-2xl grid place-items-center bg-neon/10 text-neon mb-3 glow-green">
+                    <Icon name={mode === 'team' ? 'upload' : 'image'} className="w-7 h-7" />
+                  </div>
+                  <p className="font-semibold text-white">{mode === 'team' ? 'Subir Imagen de Equipo' : 'Subir Imagen de Mercado'}</p>
+                  <p className="text-xs text-slate-400 mt-1">Arrastra una captura o toca para elegir (PNG/JPG)</p>
+                  <p className="text-[11px] text-slate-500 mt-2 font-mono">Sin imagen → la IA usa una captura de demo</p>
+                </div>
+              )}
+              {scanning && (<><div className="scan-grid" /><div className="scan-line" /></>)}
+              {current && !scanning && (
+                <span className="absolute bottom-2 left-2 text-[11px] font-mono bg-black/70 px-2 py-1 rounded text-neon">Imagen lista ✔ · toca para cambiar</span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div className="flex-1 rounded-2xl bg-black/60 border border-neon/20 p-3 font-mono text-[11px] sm:text-xs text-neon/90 min-h-[140px] max-h-[200px] overflow-auto">
+                {log.length === 0 && !scanning && (
+                  <p className="text-slate-500">$ hacker-vision --mode={mode} <span className="blink">▌</span></p>
+                )}
+                {log.map((l, i) => <p key={i} className="fade-in leading-relaxed">{l}</p>)}
+                {scanning && <p className="blink">▌</p>}
+              </div>
+              <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-neon to-hack transition-all duration-300" style={{ width: `${progress}%` }} />
+              </div>
+              <button onClick={analyze} disabled={scanning} className="btn-neon rounded-xl py-3 px-4 flex items-center justify-center gap-2 text-sm">
+                <Icon name="scan" className="w-4 h-4" />
+                {scanning ? `Analizando… ${progress}%` : 'Analizar con IA'}
+              </button>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    /* ---------- FEED DEL HACKER ---------- */
+    function HackerFeed({ hacks, onExecute, squadMap, marketMap }) {
+      const style = {
+        critical: { emoji: '🔴', label: 'ALERTA CRÍTICA', cls: 'border-danger/60 bg-danger/5', tag: 'text-danger' },
+        high: { emoji: '🟢', label: 'HACK SUGERIDO', cls: 'border-neon/50 bg-neon/[.04]', tag: 'text-neon' },
+        mid: { emoji: '🟢', label: 'HACK SUGERIDO', cls: 'border-hack/50 bg-hack/[.06]', tag: 'text-neon' },
+        info: { emoji: '🟡', label: 'MANTÉN Y BLINDA', cls: 'border-warn/40 bg-warn/[.04]', tag: 'text-warn' },
+      };
+      return (
+        <section className="card-purple p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-hack glow-text-purple flex items-center gap-2">
+              <Icon name="bolt" className="w-5 h-5" /> FEED DEL HACKER
+            </h2>
+            <span className="font-mono text-[11px] text-hack/80 border border-hack/40 rounded-full px-2 py-0.5">{hacks.length} órdenes</span>
+          </div>
+          <div className="space-y-3 max-h-[640px] overflow-auto pr-1">
+            {hacks.length === 0 && (
+              <p className="text-sm text-slate-400 font-mono">✔ Tu once está optimizado. La IA sigue vigilando el mercado…</p>
+            )}
+            {hacks.map((h) => {
+              const s = style[h.severity];
+              const out = squadMap[h.outId];
+              const inn = h.inId ? (marketMap[h.inId] || squadMap[h.inId]) : null;
+              return (
+                <article key={h.id} className={`fade-in rounded-2xl border p-3.5 ${s.cls}`}>
+                  <div className={`font-mono text-[11px] font-semibold tracking-wider ${s.tag}`}>{s.emoji} {s.label}</div>
+                  <h3 className="font-bold text-white mt-1 leading-snug">{h.title}</h3>
+                  <p className="text-sm text-slate-300 mt-1.5 leading-relaxed">
+                    <span className="text-hack font-semibold">¿Por qué? </span>{h.why}
+                  </p>
+                  {out && inn && (
+                    <div className="mt-3 flex items-center gap-2 text-xs">
+                      <MiniPlayer p={out} tone="out" />
+                      <Icon name="swap" className="w-4 h-4 text-hack shrink-0" />
+                      <MiniPlayer p={inn} tone="in" />
+                    </div>
+                  )}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] text-neon">{h.impact}</span>
+                    {(h.type === 'swap' || h.type === 'bench') && (
+                      <button onClick={() => onExecute(h)} className="btn-hack text-xs rounded-lg px-3 py-1.5">Ejecutar hack ⚡</button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      );
+    }
+
+    function MiniPlayer({ p, tone }) {
+      return (
+        <div className={`flex-1 min-w-0 rounded-lg px-2 py-1.5 border ${tone === 'out' ? 'border-danger/40 bg-danger/5' : 'border-neon/40 bg-neon/5'}`}>
+          <div className="flex items-center gap-1.5">
+            <HealthDot health={p.health} />
+            <span className="font-semibold text-white truncate">{p.short}</span>
+          </div>
+          <div className="font-mono text-[10px] text-slate-400">{fmtM(p.price)} · {projection(p)} pts</div>
+        </div>
+      );
+    }
+
+    /* ---------- TARJETAS COMPRAR / VENDER / MANTENER ---------- */
+    function RecommendationCards({ cards }) {
+      const cols = [
+        { key: 'buy', title: 'COMPRAR', cls: 'text-neon', border: 'border-neon/40', bg: 'bg-neon/[.04]' },
+        { key: 'sell', title: 'VENDER', cls: 'text-danger', border: 'border-danger/40', bg: 'bg-danger/[.04]' },
+        { key: 'hold', title: 'MANTENER', cls: 'text-warn', border: 'border-warn/40', bg: 'bg-warn/[.03]' },
+      ];
+      return (
+        <section className="card p-4 sm:p-5">
+          <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-white mb-4 flex items-center gap-2">
+            <Icon name="chart" className="w-5 h-5 text-neon" /> RADAR DE MERCADO
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {cols.map((c) => (
+              <div key={c.key} className={`rounded-2xl border ${c.border} ${c.bg} p-3`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`font-display font-black text-sm tracking-widest ${c.cls}`}>{c.title}</span>
+                  <span className="font-mono text-[11px] text-slate-500">{cards[c.key].length}</span>
+                </div>
+                <ul className="space-y-2">
+                  {cards[c.key].length === 0 && <li className="text-xs text-slate-500">Nada por aquí.</li>}
+                  {cards[c.key].map(({ p, reason }) => (
+                    <li key={p.id} className="rounded-xl bg-black/40 border border-white/5 p-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <PosTag pos={p.pos} />
+                          <span className="font-semibold text-sm text-white truncate">{p.short}</span>
+                          {p.isNew && <span className="text-[9px] font-mono text-hack border border-hack/50 rounded px-1">OCR</span>}
+                        </div>
+                        <TrendTag trend={p.trend} />
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-slate-400 truncate">{reason}</span>
+                        <FormBars form={p.form} />
+                      </div>
+                      <div className="mt-1 font-mono text-[10px] text-slate-500">{TEAMS[p.team].name} · {fmtM(p.price)} · {projection(p)} pts proy.</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    /* ---------- CAMPO DE FÚTBOL ---------- */
+    function Pitch({ squad, selectedId, onSelect, projTotal }) {
+      const starters = squad.filter((p) => p.starter);
+      const rows = ['DEL', 'MED', 'DEF', 'POR'];
+      const rowY = { DEL: 16, MED: 41, DEF: 66, POR: 88 };
+      const bench = squad.filter((p) => !p.starter);
+
+      return (
+        <section className="card p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-white flex items-center gap-2">
+              <Icon name="target" className="w-5 h-5 text-neon" /> TU ONCE · 4-3-3
+            </h2>
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Proyección jornada</div>
+              <div key={projTotal} className="font-display font-black text-neon glow-text-green text-lg bump">{projTotal.toFixed(1)} pts</div>
+            </div>
+          </div>
+
+          <div className="pitch w-full aspect-[3/4] sm:aspect-[4/5] max-h-[640px] mx-auto">
+            <svg className="pitch-svg absolute inset-0 w-full h-full" viewBox="0 0 68 105" preserveAspectRatio="none">
+              <rect x="2" y="2" width="64" height="101" />
+              <line x1="2" y1="52.5" x2="66" y2="52.5" />
+              <circle cx="34" cy="52.5" r="9.15" />
+              <circle className="spot" cx="34" cy="52.5" r="0.6" />
+              <rect x="13.85" y="2" width="40.3" height="16.5" />
+              <rect x="24.85" y="2" width="18.3" height="5.5" />
+              <circle className="spot" cx="34" cy="13" r="0.5" />
+              <path d="M26.7 18.5 A9.15 9.15 0 0 0 41.3 18.5" />
+              <rect x="13.85" y="86.5" width="40.3" height="16.5" />
+              <rect x="24.85" y="97.5" width="18.3" height="5.5" />
+              <circle className="spot" cx="34" cy="92" r="0.5" />
+              <path d="M26.7 86.5 A9.15 9.15 0 0 1 41.3 86.5" />
+            </svg>
+
+            {rows.map((pos) => {
+              const line = starters.filter((p) => p.pos === pos);
+              return line.map((p, i) => {
+                const x = ((i + 1) / (line.length + 1)) * 100;
+                const proj = projection(p);
+                return (
+                  <button key={p.id} onClick={() => onSelect(p.id)}
+                    className={`player-chip absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 ${selectedId === p.id ? 'selected' : ''}`}
+                    style={{ left: `${x}%`, top: `${rowY[pos]}%` }}>
+                    <div className="relative">
+                      <div className="shirt" style={{ background: TEAMS[p.team].color }}>{p.team}</div>
+                      {p.health !== 'ok' && (
+                        <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full grid place-items-center text-[9px] font-black text-void ${p.health === 'duda' ? 'bg-warn' : 'bg-danger'}`}>
+                          {p.health === 'duda' ? '?' : '+'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="bg-black/75 border border-white/10 rounded-md px-1.5 py-0.5 text-center leading-tight max-w-[80px]">
+                      <div className="text-[10px] sm:text-[11px] font-semibold text-white truncate">{p.short}</div>
+                      <div className={`font-mono text-[10px] ${proj >= 6 ? 'text-neon' : proj >= 3.5 ? 'text-warn' : 'text-danger'}`}>{proj.toFixed(1)} pts</div>
+                    </div>
+                  </button>
+                );
+              });
+            })}
+          </div>
+
+          <div className="mt-4">
+            <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2">Banquillo</div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {bench.map((p) => (
+                <div key={p.id} className="shrink-0 rounded-xl bg-black/40 border border-white/10 px-3 py-2 min-w-[130px]">
+                  <div className="flex items-center gap-1.5"><PosTag pos={p.pos} /><span className="text-sm font-semibold text-white truncate">{p.short}</span></div>
+                  <div className="font-mono text-[10px] text-slate-400 mt-0.5">{fmtM(p.price)} · {projection(p)} pts</div>
+                </div>
+              ))}
+              {bench.length === 0 && <span className="text-xs text-slate-500">Sin suplentes.</span>}
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-3 font-mono">💡 Toca un titular para ver reemplazos recomendados.</p>
+        </section>
+      );
+    }
+
+    /* ---------- PANEL DE REEMPLAZO ---------- */
+    function ReplaceSheet({ player, squad, market, budget, onClose, onBuy, onBenchSwap }) {
+      if (!player) return null;
+      const base = projection(player);
+      const n = nextOf(player);
+      const options = market
+        .filter((m) => m.pos === player.pos)
+        .map((m) => ({ m, delta: projection(m) - base, affordable: m.price <= budget + player.price }))
+        .sort((a, b) => b.delta - a.delta);
+      const benchOpts = squad.filter((b) => !b.starter && b.pos === player.pos);
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sheet-backdrop" onClick={onClose}>
+          <div className="card w-full sm:max-w-lg max-h-[88vh] overflow-auto rounded-b-none sm:rounded-b-[18px] p-4 sm:p-5 fade-in glow-purple" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2"><PosTag pos={player.pos} /><HealthDot health={player.health} /><span className={`text-xs ${HEALTH_INFO[player.health].cls}`}>{HEALTH_INFO[player.health].label}</span></div>
+                <h3 className="font-display font-bold text-lg text-white mt-1">{player.name}</h3>
+                <p className="text-xs text-slate-400">{TEAMS[player.team].name} · {n.home ? 'vs' : '@'} {n.rival} (dif. {n.diff}/5) · {fmtM(player.price)}</p>
+              </div>
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400"><Icon name="x" /></button>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              <Kpi label="Proyección" value={`${base} pts`} />
+              <Kpi label="Media" value={player.avg.toFixed(1)} />
+              <Kpi label="Tendencia" value={`${sign(player.trend)}%`} tone={player.trend >= 0 ? 'text-neon' : 'text-danger'} />
+            </div>
+
+            {benchOpts.length > 0 && (
+              <>
+                <h4 className="mt-5 mb-2 text-xs uppercase tracking-wider text-slate-500 font-semibold">Desde tu banquillo (gratis)</h4>
+                {benchOpts.map((b) => {
+                  const d = projection(b) - base;
+                  return (
+                    <OptionRow key={b.id} p={b} delta={d} label="Alinear" onClick={() => onBenchSwap(player.id, b.id)} />
+                  );
+                })}
+              </>
+            )}
+
+            <h4 className="mt-5 mb-2 text-xs uppercase tracking-wider text-slate-500 font-semibold">Reemplazos recomendados del mercado</h4>
+            <div className="space-y-2">
+              {options.length === 0 && <p className="text-sm text-slate-500">No hay {POS_LABEL[player.pos].toLowerCase()}s en el mercado.</p>}
+              {options.map(({ m, delta, affordable }) => (
+                <OptionRow key={m.id} p={m} delta={delta} disabled={!affordable || m.health !== 'ok'}
+                  note={!affordable ? `Te faltan ${fmtM(m.price - budget - player.price)}` : m.health !== 'ok' ? HEALTH_INFO[m.health].label : `Coste neto ${fmtM(m.price - player.price)}`}
+                  label="Fichar" onClick={() => onBuy(player.id, m.id)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Kpi({ label, value, tone = 'text-white' }) {
+      return (
+        <div className="rounded-xl bg-black/40 border border-white/10 py-2">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">{label}</div>
+          <div className={`font-display font-bold text-sm ${tone}`}>{value}</div>
+        </div>
+      );
+    }
+
+    function OptionRow({ p, delta, disabled, note, label, onClick }) {
+      return (
+        <div className={`flex items-center gap-3 rounded-xl border p-2.5 ${delta > 0 ? 'border-neon/30 bg-neon/[.03]' : 'border-white/10 bg-black/30'}`}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <HealthDot health={p.health} />
+              <span className="font-semibold text-sm text-white truncate">{p.name}</span>
+              {p.isNew && <span className="text-[9px] font-mono text-hack border border-hack/50 rounded px-1">OCR</span>}
+            </div>
+            <div className="font-mono text-[10px] text-slate-400 mt-0.5 flex flex-wrap gap-x-2">
+              <span>{TEAMS[p.team].name}</span><span>{fmtM(p.price)}</span><span>{projection(p)} pts</span>
+              {note && <span className="text-slate-500">· {note}</span>}
+            </div>
+          </div>
+          <span className={`font-mono text-xs font-semibold ${delta > 0 ? 'text-neon' : delta < 0 ? 'text-danger' : 'text-slate-400'}`}>{delta > 0 ? '+' : ''}{delta.toFixed(1)}</span>
+          <button disabled={disabled} onClick={onClick} className="btn-neon rounded-lg px-3 py-1.5 text-xs">{label}</button>
+        </div>
+      );
+    }
+
+    /* ---------- CALCULADORA DE GUERRA DE CLÁUSULAS ---------- */
+    function ClauseCalculator({ squad, rivals, setRivals }) {
+      const [playerId, setPlayerId] = useState(squad[0]?.id);
+      const [targetId, setTargetId] = useState(rivals[0]?.id);
+      const [aggr, setAggr] = useState(60);
+
+      useEffect(() => {
+        if (!squad.find((p) => p.id === playerId)) setPlayerId(squad[0]?.id);
+      }, [squad, playerId]);
+
+      const player = squad.find((p) => p.id === playerId) || squad[0];
+      const target = rivals.find((r) => r.id === targetId) || rivals[0];
+
+      const calc = useMemo(() => {
+        if (!player || !target) return null;
+        const hype = Math.max(0, player.trend) / 100 + Math.max(0, formAvg(player) - 5) * 0.02;
+        const fairValue = player.price * (1 + hype);
+        const multiplier = 1.15 + (aggr / 100) * 0.85; // 1.15x → 2.0x
+        const inflated = player.price * multiplier;
+        // Precio "ruina": dejar al rival objetivo con solo un % mínimo de su caja
+        const leftPct = 0.25 - (aggr / 100) * 0.22; // 25% → 3%
+        const ruin = target.budget * (1 - leftPct);
+        let price = Math.max(fairValue, inflated);
+        if (ruin > price && ruin <= player.price * 3) price = ruin;
+        // Precio "psicológico" exacto en euros, terminado en ...999 €
+        const exact = Math.floor(price * 1000) / 1000 - 0.000001;
+        const max = Math.max(...rivals.map((r) => r.budget));
+        return { fairValue, inflated, ruin, exact, leftPct, max };
+      }, [player, target, aggr, rivals]);
+
+      const updateBudget = (id, v) => {
+        const n = parseFloat(v);
+        setRivals((rs) => rs.map((r) => (r.id === id ? { ...r, budget: isNaN(n) ? 0 : n } : r)));
+      };
+
+      return (
+        <section className="card p-4 sm:p-5 border-hack/30">
+          <h2 className="font-display font-bold text-base sm:text-lg tracking-wide text-white flex items-center gap-2">
+            <Icon name="shield" className="w-5 h-5 text-hack" /> GUERRA DE CLÁUSULAS
+          </h2>
+          <p className="text-xs text-slate-400 mt-1">Calcula el precio de venta exacto en el mercado interno para que, si un rival te roba al jugador, se quede sin caja.</p>
+
+          <div className="grid sm:grid-cols-2 gap-3 mt-4">
+            <label className="block">
+              <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Tu jugador</span>
+              <select value={playerId} onChange={(e) => setPlayerId(e.target.value)} className="mt-1 w-full rounded-xl bg-black/50 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hack">
+                {squad.map((p) => <option key={p.id} value={p.id}>{p.name} · {fmtM(p.price)}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Rival a arruinar</span>
+              <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className="mt-1 w-full rounded-xl bg-black/50 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hack">
+                {rivals.map((r) => <option key={r.id} value={r.id}>{r.name} · {fmtM(r.budget)}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <label className="block mt-4">
+            <div className="flex justify-between text-[11px] uppercase tracking-wider font-semibold">
+              <span className="text-slate-500">Agresividad</span>
+              <span className={aggr >= 75 ? 'text-danger' : aggr >= 40 ? 'text-hack' : 'text-neon'}>{aggr}% · {aggr >= 75 ? 'Modo villano' : aggr >= 40 ? 'Presión alta' : 'Conservador'}</span>
+            </div>
+            <input type="range" min="0" max="100" value={aggr} onChange={(e) => setAggr(+e.target.value)} className="w-full mt-2" />
+          </label>
+
+          {calc && (
+            <div className="mt-4 rounded-2xl bg-black/50 border border-hack/40 p-4 glow-purple">
+              <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Precio exacto de venta</div>
+              <div className="font-display font-black text-2xl sm:text-3xl text-hack glow-text-purple mt-1 break-words">{fmtEUR(calc.exact)}</div>
+              <div className="font-mono text-[11px] text-slate-400 mt-1">
+                {(calc.exact / player.price).toFixed(2)}x su valor ({fmtM(player.price)}) · valor justo con hype {fmtM(calc.fairValue)}
+              </div>
+              <p className="text-xs text-slate-300 mt-3 leading-relaxed">
+                Si <b className="text-white">{target.name}</b> paga este precio, se queda con{' '}
+                <b className={target.budget - calc.exact < 0 ? 'text-neon' : 'text-danger'}>{target.budget - calc.exact < 0 ? 'nada: no puede pagarlo' : fmtM(target.budget - calc.exact)}</b>{' '}
+                en caja para el resto de la jornada. El precio termina en 999 € para esquivar las pujas redondas.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2">Impacto por rival (edita su caja)</div>
+            <div className="space-y-2">
+              {rivals.map((r) => {
+                const left = r.budget - (calc ? calc.exact : 0);
+                const can = left >= 0;
+                const dmg = can ? Math.min(100, ((calc ? calc.exact : 0) / (r.budget || 1)) * 100) : 0;
+                return (
+                  <div key={r.id} className="rounded-xl bg-black/30 border border-white/10 p-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1 text-sm font-semibold text-white truncate">{r.name}</span>
+                      <input type="number" step="0.1" value={r.budget} onChange={(e) => updateBudget(r.id, e.target.value)}
+                        className="w-20 rounded-lg bg-black/60 border border-white/10 px-2 py-1 text-xs font-mono text-right text-white focus:outline-none focus:border-hack" />
+                      <span className="text-[10px] text-slate-500">M€</span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${dmg}%`, background: dmg >= 80 ? '#ff3b6b' : dmg >= 50 ? '#b026ff' : '#39ff88' }} />
+                      </div>
+                      <span className={`font-mono text-[10px] w-32 text-right ${can ? (dmg >= 80 ? 'text-danger' : 'text-hack') : 'text-neon'}`}>
+                        {can ? `${dmg.toFixed(0)}% caja · queda ${fmtM(left)}` : 'No puede pagarlo 🔒'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    /* ---------- TOASTS ---------- */
+    function Toasts({ toasts }) {
+      return (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-[calc(100%-32px)] max-w-sm pointer-events-none">
+          {toasts.map((t) => (
+            <div key={t.id} className={`fade-in rounded-xl px-4 py-3 text-sm font-semibold border backdrop-blur-md ${t.tone === 'error' ? 'bg-danger/15 border-danger/50 text-danger' : 'bg-black/80 border-neon/50 text-neon glow-green'}`}>
+              {t.msg}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    /* =====================================================
+       APP
+    ===================================================== */
+    function App() {
+      const saved = useMemo(loadState, []);
+      const [squad, setSquad] = useState(saved?.squad || INITIAL_SQUAD);
+      const [market, setMarket] = useState(saved?.market || INITIAL_MARKET);
+      const [budget, setBudget] = useState(saved?.budget ?? INITIAL_BUDGET);
+      const [rivals, setRivals] = useState(saved?.rivals || INITIAL_RIVALS);
+      const [selectedId, setSelectedId] = useState(null);
+      const [toasts, setToasts] = useState([]);
+
+      useEffect(() => { saveState({ squad, market, budget, rivals }); }, [squad, market, budget, rivals]);
+
+      const toast = useCallback((msg, tone = 'ok') => {
+        const id = Math.random().toString(36).slice(2);
+        setToasts((t) => [...t, { id, msg, tone }]);
+        setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
+      }, []);
+
+      const squadValue = useMemo(() => squad.reduce((s, p) => s + p.price, 0), [squad]);
+      const projTotal = useMemo(() => squad.filter((p) => p.starter).reduce((s, p) => s + projection(p), 0), [squad]);
+      const hacks = useMemo(() => generateHacks(squad, market, budget), [squad, market, budget]);
+      const cards = useMemo(() => generateCards(squad, market), [squad, market]);
+      const squadMap = useMemo(() => Object.fromEntries(squad.map((p) => [p.id, p])), [squad]);
+      const marketMap = useMemo(() => Object.fromEntries(market.map((p) => [p.id, p])), [market]);
+
+      // Vende al titular y ficha al jugador del mercado en su lugar
+      const buyReplacement = (outId, inId) => {
+        const out = squad.find((p) => p.id === outId);
+        const inn = market.find((p) => p.id === inId);
+        if (!out || !inn) return;
+        if (inn.price > budget + out.price) { toast('Presupuesto insuficiente para este hack', 'error'); return; }
+        const before = projection(out);
+        setSquad((sq) => sq.map((p) => (p.id === outId ? { ...inn, starter: out.starter, isNew: false } : p)));
+        setMarket((mk) => [...mk.filter((p) => p.id !== inId), { ...out, starter: undefined }]);
+        setBudget((b) => Math.round((b + out.price - inn.price) * 10) / 10);
+        setSelectedId(null);
+        const d = projection(inn) - before;
+        toast(`⚡ ${inn.short} entra por ${out.short} · ${d >= 0 ? '+' : ''}${d.toFixed(1)} pts`);
+      };
+
+      const benchSwap = (outId, inId) => {
+        setSquad((sq) => sq.map((p) => (p.id === outId ? { ...p, starter: false } : p.id === inId ? { ...p, starter: true } : p)));
+        setSelectedId(null);
+        const a = squad.find((p) => p.id === inId);
+        toast(`🔁 ${a ? a.short : 'Suplente'} pasa al once titular`);
+      };
+
+      const executeHack = (h) => {
+        if (h.type === 'swap') buyReplacement(h.outId, h.inId);
+        else if (h.type === 'bench') benchSwap(h.outId, h.inId);
+      };
+
+      const onAnalyzed = (mode) => {
+        if (mode === 'team') {
+          setSquad(OCR_SQUAD);
+          setBudget(OCR_BUDGET);
+          toast('✔ Equipo leído: 14 jugadores importados al campo');
+        } else {
+          setMarket((mk) => {
+            const ids = new Set(mk.map((p) => p.id));
+            const squadIds = new Set(squad.map((p) => p.id));
+            return [...OCR_MARKET.filter((p) => !ids.has(p.id) && !squadIds.has(p.id)), ...mk];
+          });
+          toast('✔ Mercado leído: 5 oportunidades nuevas detectadas');
+        }
+      };
+
+      const reset = () => {
+        setSquad(INITIAL_SQUAD); setMarket(INITIAL_MARKET); setBudget(INITIAL_BUDGET); setRivals(INITIAL_RIVALS); setSelectedId(null);
+        toast('Datos de prueba restaurados');
+      };
+
+      const selected = squad.find((p) => p.id === selectedId) || null;
+
+      return (
+        <>
+          <Navbar squadValue={squadValue} budget={budget} projTotal={projTotal} onReset={reset} />
+          <main className="max-w-7xl mx-auto px-4 py-5 space-y-5">
+            <UploadZone onAnalyzed={onAnalyzed} />
+
+            <div className="grid lg:grid-cols-[1.05fr_1fr] gap-5 items-start">
+              <div className="space-y-5 order-2 lg:order-1">
+                <Pitch squad={squad} selectedId={selectedId} onSelect={setSelectedId} projTotal={projTotal} />
+                <ClauseCalculator squad={squad} rivals={rivals} setRivals={setRivals} />
+              </div>
+              <div className="space-y-5 order-1 lg:order-2">
+                <HackerFeed hacks={hacks} onExecute={executeHack} squadMap={squadMap} marketMap={marketMap} />
+              </div>
+            </div>
+
+            <RecommendationCards cards={cards} />
+
+            <footer className="text-center text-[11px] text-slate-600 font-mono py-6">
+              FANTASY HACKER · Datos de prueba con fines de demostración · Proyecciones generadas por el motor local de IA
+            </footer>
+          </main>
+
+          <ReplaceSheet player={selected} squad={squad} market={market} budget={budget}
+            onClose={() => setSelectedId(null)} onBuy={buyReplacement} onBenchSwap={benchSwap} />
+          <Toasts toasts={toasts} />
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
